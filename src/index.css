@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-purple: #8C00FF;
+  --color-pink:   #FF3F7F;
+  --color-yellow: #FFC400;
+  --color-dark:   #450693;
+}
