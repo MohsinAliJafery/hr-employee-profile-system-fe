@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import authAPI from '../../services/auth';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 const Signup = ({ onSignupSuccess }) => {
   const [errors, setErrors] = useState([]);
@@ -66,7 +67,6 @@ const Signup = ({ onSignupSuccess }) => {
         localStorage.setItem('user', JSON.stringify(response.user));
         
         console.log("Signup successful:", response.user);
-        alert("Company profile created successfully!");
         
         // Reset form
         setFormData({
@@ -85,7 +85,14 @@ const Signup = ({ onSignupSuccess }) => {
         setPreview(null);
         setLogoFile(null);
         
-        navigate("/login")
+          // ✅ Show Sonner toast
+  toast.success("Account created successfully!");
+
+  // ✅ Navigate after 3 seconds
+  setTimeout(() => {
+    navigate("/login");
+  }, 1000);
+
       } else {
         setErrors([response.message]);
       }
