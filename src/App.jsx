@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import EmployeeForm from './components/employees/employeeForm.jsx';
+import EmployeeForm from './components/employees/EmployeeForm.jsx';
 import EmployeeList from './pages/employee/Employees.jsx';
 import DepartmentList from './pages/department/Departments.jsx';
 import DocumentsList from './pages/documents/Documents.jsx';
