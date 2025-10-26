@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import authAPI from '../../services/auth';
+import { useNavigate } from 'react-router-dom';
 
 const Signup = ({ onSignupSuccess }) => {
   const [errors, setErrors] = useState([]);
@@ -19,6 +20,8 @@ const Signup = ({ onSignupSuccess }) => {
     password: '',
     confirmPassword: ''
   });
+
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -82,7 +85,7 @@ const Signup = ({ onSignupSuccess }) => {
         setPreview(null);
         setLogoFile(null);
         
-        if (onSignupSuccess) onSignupSuccess();
+        navigate("/login")
       } else {
         setErrors([response.message]);
       }
