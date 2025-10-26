@@ -107,7 +107,7 @@ const Login = ({ onToggleSignup, onForgotPassword }) => {
           <p className="text-gray-600">
             Don't have an account?{" "}
             <button
-              onClick={onToggleSignup}
+              onClick={() => navigate('/signup')}
               className="text-[#8C00FF] hover:text-[#450693] font-semibold"
               disabled={isLoading}
             >
