@@ -1,5 +1,5 @@
 'use client';
-
+import AddressAutocomplete from '@/components/AddressAutoComplete';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -25,8 +25,51 @@ const PersonalInfoStep = ({
   onInputChange,
   visaFile,
   setVisaFile,
+  profilePicture,
+  setProfilePicture,
   ukCities
 }) => {
+  // List of world nationalities
+  const NATIONALITIES = [
+    'Afghan', 'Albanian', 'Algerian', 'American', 'Andorran', 'Angolan', 'Antiguans', 'Argentinean', 
+    'Armenian', 'Australian', 'Austrian', 'Azerbaijani', 'Bahamian', 'Bahraini', 'Bangladeshi', 
+    'Barbadian', 'Barbudans', 'Batswana', 'Belarusian', 'Belgian', 'Belizean', 'Beninese', 'Bhutanese', 
+    'Bolivian', 'Bosnian', 'Brazilian', 'British', 'Bruneian', 'Bulgarian', 'Burkinabe', 'Burmese', 
+    'Burundian', 'Cambodian', 'Cameroonian', 'Canadian', 'Cape Verdean', 'Central African', 'Chadian', 
+    'Chilean', 'Chinese', 'Colombian', 'Comoran', 'Congolese', 'Costa Rican', 'Croatian', 'Cuban', 
+    'Cypriot', 'Czech', 'Danish', 'Djibouti', 'Dominican', 'Dutch', 'East Timorese', 'Ecuadorean', 
+    'Egyptian', 'Emirian', 'Equatorial Guinean', 'Eritrean', 'Estonian', 'Ethiopian', 'Fijian', 
+    'Filipino', 'Finnish', 'French', 'Gabonese', 'Gambian', 'Georgian', 'German', 'Ghanaian', 
+    'Greek', 'Grenadian', 'Guatemalan', 'Guinea-Bissauan', 'Guinean', 'Guyanese', 'Haitian', 
+    'Herzegovinian', 'Honduran', 'Hungarian', 'I-Kiribati', 'Icelander', 'Indian', 'Indonesian', 
+    'Iranian', 'Iraqi', 'Irish', 'Israeli', 'Italian', 'Ivorian', 'Jamaican', 'Japanese', 'Jordanian', 
+    'Kazakhstani', 'Kenyan', 'Kittian and Nevisian', 'Kuwaiti', 'Kyrgyz', 'Laotian', 'Latvian', 
+    'Lebanese', 'Liberian', 'Libyan', 'Liechtensteiner', 'Lithuanian', 'Luxembourger', 'Macedonian', 
+    'Malagasy', 'Malawian', 'Malaysian', 'Maldivian', 'Malian', 'Maltese', 'Marshallese', 'Mauritanian', 
+    'Mauritian', 'Mexican', 'Micronesian', 'Moldovan', 'Monacan', 'Mongolian', 'Moroccan', 
+    'Mosotho', 'Motswana', 'Mozambican', 'Namibian', 'Nauruan', 'Nepalese', 'New Zealander', 
+    'Nicaraguan', 'Nigerian', 'Nigerien', 'North Korean', 'Northern Irish', 'Norwegian', 'Omani', 
+    'Pakistani', 'Palauan', 'Panamanian', 'Papua New Guinean', 'Paraguayan', 'Peruvian', 'Polish', 
+    'Portuguese', 'Qatari', 'Romanian', 'Russian', 'Rwandan', 'Saint Lucian', 'Salvadoran', 'Samoan', 
+    'San Marinese', 'Sao Tomean', 'Saudi', 'Scottish', 'Senegalese', 'Serbian', 'Seychellois', 
+    'Sierra Leonean', 'Singaporean', 'Slovakian', 'Slovenian', 'Solomon Islander', 'Somali', 
+    'South African', 'South Korean', 'Spanish', 'Sri Lankan', 'Sudanese', 'Surinamer', 'Swazi', 
+    'Swedish', 'Swiss', 'Syrian', 'Taiwanese', 'Tajik', 'Tanzanian', 'Thai', 'Togolese', 'Tongan', 
+    'Trinidadian or Tobagonian', 'Tunisian', 'Turkish', 'Tuvaluan', 'Ugandan', 'Ukrainian', 
+    'Uruguayan', 'Uzbekistani', 'Venezuelan', 'Vietnamese', 'Welsh', 'Yemenite', 'Zambian', 'Zimbabwean'
+  ];
+
+  const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+  const MARITAL_STATUSES = ['Single', 'Married', 'Divorced', 'Widowed', 'Separated'];
+  const GENDERS = ['Male', 'Female', 'Other'];
+  const TITLES = ['Mr.', 'Mrs.', 'Ms.', 'Miss', 'Dr.', 'Prof.'];
+
+  const handleAddressSelect = (suggestion) => {
+    // You can use the full suggestion data if needed
+    console.log('Selected address:', suggestion);
+    // The address value is already updated via onChange in the AddressAutocomplete component
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -34,7 +77,73 @@ const PersonalInfoStep = ({
         <p className="text-gray-600 mb-6">Basic details about the employee</p>
       </div>
 
+      {/* Profile Picture Upload */}
+      <div className="border-b pb-6">
+        <h4 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h4>
+        <div className="flex items-center gap-6">
+          <div className="flex-shrink-0">
+            {profilePicture ? (
+              <img 
+                src={URL.createObjectURL(profilePicture)} 
+                alt="Profile preview" 
+                className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
+              />
+            ) : formData.profilePicturePath ? (
+              <img 
+                src={`http://localhost:5000/uploads/${formData.profilePicturePath}`}
+                alt="Current profile" 
+                className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center border-2 border-dashed border-gray-300">
+                <Upload size={24} className="text-gray-400" />
+              </div>
+            )}
+          </div>
+          <div className="flex-1">
+            <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors w-fit">
+              <Upload size={16} />
+              {profilePicture || formData.profilePicturePath ? 'Change Picture' : 'Upload Picture'}
+              <input
+                type="file"
+                className="hidden"
+                accept=".jpg,.jpeg,.png,.webp"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setProfilePicture(file);
+                  }
+                }}
+              />
+            </label>
+            <p className="text-xs text-gray-500 mt-2">
+              Recommended: Square image, 500x500px, Max 2MB
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid md:grid-cols-2 gap-6">
+        {/* Title */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+          <select
+            name="title"
+            value={formData.title || ''}
+            onChange={onInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          >
+            <option value="">Select Title</option>
+            {TITLES.map((title) => (
+              <option key={title} value={title}>
+                {title}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* First Name */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
           <input
@@ -47,6 +156,19 @@ const PersonalInfoStep = ({
           />
         </div>
 
+        {/* Middle Name */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Middle Name</label>
+          <input
+            type="text"
+            name="middleName"
+            value={formData.middleName || ''}
+            onChange={onInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
+        {/* Last Name */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
           <input
@@ -59,6 +181,151 @@ const PersonalInfoStep = ({
           />
         </div>
 
+        {/* Date of Birth */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth *</label>
+          <input
+            type="date"
+            name="dateOfBirth"
+            value={formData.dateOfBirth || ''}
+            onChange={onInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          />
+        </div>
+
+        {/* Place of Birth */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Place of Birth *</label>
+          <input
+            type="text"
+            name="placeOfBirth"
+            value={formData.placeOfBirth || ''}
+            onChange={onInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="e.g., London, UK"
+            required
+          />
+        </div>
+
+        {/* Gender */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Gender *</label>
+          <select
+            name="gender"
+            value={formData.gender || ''}
+            onChange={onInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          >
+            <option value="">Select Gender</option>
+            {GENDERS.map((gender) => (
+              <option key={gender} value={gender}>
+                {gender}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Blood Group */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Blood Group</label>
+          <select
+            name="bloodGroup"
+            value={formData.bloodGroup || ''}
+            onChange={onInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">Select Blood Group</option>
+            {BLOOD_GROUPS.map((group) => (
+              <option key={group} value={group}>
+                {group}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Marital Status */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Marital Status *</label>
+          <select
+            name="maritalStatus"
+            value={formData.maritalStatus || ''}
+            onChange={onInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          >
+            <option value="">Select Marital Status</option>
+            {MARITAL_STATUSES.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+        </div>
+
+             {/* Nationality */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Nationality *</label>
+          <select
+            name="nationality"
+            value={formData.nationality || ''}
+            onChange={onInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          >
+            <option value="">Select Nationality</option>
+            {NATIONALITIES.map((nationality) => (
+              <option key={nationality} value={nationality}>
+                {nationality}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Email Address */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+          <input
+            type="email"
+            name="email"
+            value={formData.email || ''}
+            onChange={onInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="e.g., john.doe@company.com"
+            required
+          />
+        </div>
+
+        {/* Contact No */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Contact No. *</label>
+          <input
+            type="tel"
+            name="contactNo"
+            value={formData.contactNo || ''}
+            onChange={onInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="e.g., +44 20 7946 0958"
+            required
+          />
+        </div>
+
+        {/* Mobile No */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Mobile No. *</label>
+          <input
+            type="tel"
+            name="mobileNo"
+            value={formData.mobileNo || ''}
+            onChange={onInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="e.g., +44 7700 900077"
+            required
+          />
+        </div>
+
+        {/* Country */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Country *</label>
           <select
@@ -70,9 +337,11 @@ const PersonalInfoStep = ({
           >
             <option value="">Select Country</option>
             <option value="United Kingdom">United Kingdom</option>
+            {/* Add more countries if needed */}
           </select>
         </div>
 
+        {/* City */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
           <select
@@ -91,29 +360,20 @@ const PersonalInfoStep = ({
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Nationality *</label>
-          <input
-            type="text"
-            name="nationality"
-            value={formData.nationality || ''}
-            onChange={onInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="e.g., British"
-            required
-          />
-        </div>
 
-        <div>
+        {/* Address - Full width */}
+        <div className="">
           <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
-          <textarea
-            name="address"
+          <AddressAutocomplete
             value={formData.address || ''}
             onChange={onInputChange}
-            rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
+            onSelect={handleAddressSelect}
+            placeholder="Start typing your address..."
+            required={true}
           />
+          <p className="text-xs text-gray-500 mt-1">
+            Start typing your address and select from suggestions
+          </p>
         </div>
       </div>
 
@@ -151,61 +411,58 @@ const PersonalInfoStep = ({
           </div>
 
           <div className="md:col-span-2">
-  <label className="block text-sm font-medium text-gray-700 mb-2">Visa Document Upload</label>
-  <div className="flex items-center gap-3">
-    <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
-      <Upload size={16} />
-      {formData.visaDocumentPath ? 'Change Visa Document' : 'Choose Visa Document'}
-      <input
-        type="file"
-        className="hidden"
-        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) {
-            setVisaFile(file);
-            onInputChange({ 
-              target: { 
-                name: 'visaDocument', 
-                value: file.name 
-              } 
-            });
-          }
-        }}
-      />
-    </label>
-    
-    {/* Show current visa document from database with download link */}
-    {!visaFile && formData.visaDocumentPath && (
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-2 text-sm text-green-600">
-          <FileText size={16} />
-          <span>Current file: </span>
-        </div>
-        <a 
-          href={`http://localhost:5000/uploads/${formData.visaDocumentPath}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 hover:text-blue-800 text-sm underline"
-        >
-          Download
-        </a>
-      </div>
-    )}
-    
-    {/* Show newly selected file */}
-    {visaFile && (
-      <div className="flex items-center gap-2 text-sm text-blue-600">
-        <FileText size={16} />
-        <span>New file: {visaFile.name}</span>
-      </div>
-    )}
-  </div>
-  <p className="text-xs text-gray-500 mt-1">
-    {formData.visaDocumentPath ? 'Current file will be kept if no new file is selected' : 'Upload visa copy (PDF, DOC, JPG, PNG - Max 5MB)'}
-  </p>
-</div>
-
+            <label className="block text-sm font-medium text-gray-700 mb-2">Visa Document Upload</label>
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
+                <Upload size={16} />
+                {formData.visaDocumentPath ? 'Change Visa Document' : 'Choose Visa Document'}
+                <input
+                  type="file"
+                  className="hidden"
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setVisaFile(file);
+                      onInputChange({ 
+                        target: { 
+                          name: 'visaDocument', 
+                          value: file.name 
+                        } 
+                      });
+                    }
+                  }}
+                />
+              </label>
+              
+              {!visaFile && formData.visaDocumentPath && (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 text-sm text-green-600">
+                    <FileText size={16} />
+                    <span>Current file: </span>
+                  </div>
+                  <a 
+                    href={`http://localhost:5000/uploads/${formData.visaDocumentPath}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:text-blue-800 text-sm underline"
+                  >
+                    Download
+                  </a>
+                </div>
+              )}
+              
+              {visaFile && (
+                <div className="flex items-center gap-2 text-sm text-blue-600">
+                  <FileText size={16} />
+                  <span>New file: {visaFile.name}</span>
+                </div>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {formData.visaDocumentPath ? 'Current file will be kept if no new file is selected' : 'Upload visa copy (PDF, DOC, JPG, PNG - Max 5MB)'}
+            </p>
+          </div>
         </div>
       </div>
     </div>
@@ -455,9 +712,259 @@ const EmploymentStep = ({
   );
 };
 
+// Step 4 Component - Next of Kin
+const NextOfKinStep = ({
+  formData,
+  onInputChange,
+  onAddNextOfKin,
+  onRemoveNextOfKin,
+  onNextOfKinChange
+}) => {
+  const RELATIONSHIPS = [
+    'Spouse', 'Parent', 'Child', 'Sibling', 'Grandparent', 
+    'Grandchild', 'Friend', 'Colleague', 'Other'
+  ];
+
+  const GENDERS = ['Male', 'Female', 'Other'];
+  const UK_CITIES = [/* Your existing UK cities array */];
+  const COUNTRIES = ['United Kingdom', 'Ireland', 'United States', 'Canada', 'Australia', 'Other'];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">Next of Kin Information</h3>
+        <p className="text-gray-600 mb-6">Emergency contact details for the employee</p>
+      </div>
+
+      {formData.nextOfKins.map((kin, index) => (
+        <div key={index} className="border border-gray-200 rounded-lg p-6">
+          <div className="flex justify-between items-center mb-4">
+            {formData.nextOfKins.length > 1 && (
+              <button
+                type="button"
+                onClick={() => onRemoveNextOfKin(index)}
+                className="text-red-600 hover:text-red-700"
+              >
+                <X size={20} />
+              </button>
+            )}
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Full Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Full Name *
+              </label>
+              <input
+                type="text"
+                value={kin.fullName || ''}
+                onChange={(e) => onNextOfKinChange(index, 'fullName', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., Sarah Johnson"
+                required
+              />
+            </div>
+
+            {/* Relationship */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Relationship to Employee *
+              </label>
+              <select
+                value={kin.relationship || ''}
+                onChange={(e) => onNextOfKinChange(index, 'relationship', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              >
+                <option value="">Select Relationship</option>
+                {RELATIONSHIPS.map((relationship) => (
+                  <option key={relationship} value={relationship}>
+                    {relationship}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date of Birth */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Date of Birth *
+              </label>
+              <input
+                type="date"
+                value={kin.dateOfBirth || ''}
+                onChange={(e) => onNextOfKinChange(index, 'dateOfBirth', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+
+            {/* Gender */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Gender *
+              </label>
+              <select
+                value={kin.gender || ''}
+                onChange={(e) => onNextOfKinChange(index, 'gender', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              >
+                <option value="">Select Gender</option>
+                {GENDERS.map((gender) => (
+                  <option key={gender} value={gender}>
+                    {gender}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Address */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Address *
+              </label>
+              <AddressAutocomplete
+                value={kin.address || ''}
+                onChange={(e) => onNextOfKinChange(index, 'address', e.target.value)}
+                placeholder="Start typing the address..."
+                required={true}
+                name={`nextOfKin-address-${index}`}
+              />
+            </div>
+
+            {/* City */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                City *
+              </label>
+              <select
+                value={kin.city || ''}
+                onChange={(e) => onNextOfKinChange(index, 'city', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              >
+                <option value="">Select City</option>
+                {UK_CITIES.map((city) => (
+                  <option key={city} value={city}>
+                    {city}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Country */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Country *
+              </label>
+              <select
+                value={kin.country || ''}
+                onChange={(e) => onNextOfKinChange(index, 'country', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              >
+                <option value="">Select Country</option>
+                {COUNTRIES.map((country) => (
+                  <option key={country} value={country}>
+                    {country}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Primary Phone Number */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number (Primary) *
+              </label>
+              <input
+                type="tel"
+                value={kin.phoneNumber || ''}
+                onChange={(e) => onNextOfKinChange(index, 'phoneNumber', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., +44 7700 900077"
+                required
+              />
+            </div>
+
+            {/* Alternate Phone Number */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Alternate Phone Number
+              </label>
+              <input
+                type="tel"
+                value={kin.alternatePhoneNumber || ''}
+                onChange={(e) => onNextOfKinChange(index, 'alternatePhoneNumber', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., +44 7700 900088"
+              />
+            </div>
+
+            {/* Email Address */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={kin.email || ''}
+                onChange={(e) => onNextOfKinChange(index, 'email', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., sarah.johnson@email.com"
+              />
+            </div>
+
+            {/* Occupation */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Occupation
+              </label>
+              <input
+                type="text"
+                value={kin.occupation || ''}
+                onChange={(e) => onNextOfKinChange(index, 'occupation', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., Teacher, Engineer"
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={onAddNextOfKin}
+        className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
+      >
+        <Plus size={16} />
+        Add Another Next of Kin
+      </button>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+        <div className="flex items-start">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-blue-800">Emergency Contact Information</h3>
+            <div className="mt-2 text-sm text-blue-700">
+              <p>Please provide at least one next of kin contact. The primary contact will be used first in case of emergencies.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Main Step Form Component
 const EmployeeStepForm = ({
-  isEdit = false,
+    isEdit = false,
   onClose,
   onSubmit,
   formData,
@@ -466,18 +973,142 @@ const EmployeeStepForm = ({
   onFileUpload,
   onAddEducation,
   onRemoveEducation,
+  onNextOfKinChange,
+  onAddNextOfKin,
+  onRemoveNextOfKin,
   visaFile,
   setVisaFile,
+  profilePicture,
+  setProfilePicture,
   formLoading,
 }) => {
 
   const [currentStep, setCurrentStep] = useState(0);
 
   const UK_CITIES = [
-    'London', 'Birmingham', 'Manchester', 'Glasgow', 'Liverpool', 
-    'Bristol', 'Leeds', 'Sheffield', 'Edinburgh', 'Cardiff', 
-    'Belfast', 'Newcastle', 'Nottingham', 'Southampton', 'Brighton'
-  ];
+  // England
+  'London', 'Birmingham', 'Manchester', 'Leeds', 'Sheffield', 'Bradford', 'Liverpool', 'Bristol', 
+  'Coventry', 'Leicester', 'Nottingham', 'Newcastle upon Tyne', 'Kingston upon Hull', 'Stoke-on-Trent', 
+  'Wolverhampton', 'Derby', 'Southampton', 'Portsmouth', 'Plymouth', 'Reading', 'Northampton', 
+  'Luton', 'Milton Keynes', 'Aberdeen', 'Norwich', 'Bournemouth', 'Brighton', 'Swindon', 'Sunderland', 
+  'Warrington', 'Huddersfield', 'Peterborough', 'Slough', 'Oxford', 'Cambridge', 'Doncaster', 
+  'York', 'Gloucester', 'Poole', 'Bath', 'Ipswich', 'Blackpool', 'Middlesbrough', 'Bolton', 
+  'Stockport', 'West Bromwich', 'Oldbury', 'Oldham', 'Sutton Coldfield', 'Walsall', 'Gateshead', 
+  'Blackburn', 'Cheltenham', 'Basingstoke', 'Chester', 'Colchester', 'Crawley', 'Maidstone', 
+  'Eastbourne', 'Weston-super-Mare', 'Worthing', 'Rotherham', 'Dudley', 'Newport', 'Preston', 
+  'Southend-on-Sea', 'Mansfield', 'Wigan', 'Rhyl', 'Burnley', 'Solihull', 'Chesterfield', 
+  'Carlisle', 'Wakefield', 'Windsor', 'Grays', 'Gillingham', 'Scunthorpe', 'Lincoln', 'Hartlepool', 
+  'Bedford', 'Bracknell', 'Cheshunt', 'Bexhill', 'High Wycombe', 'Guildford', 'Tamworth', 
+  'Maidenhead', 'Stafford', 'Wimbledon', 'Royal Tunbridge Wells', 'Watford', 'Stevenage', 
+  'St Albans', 'Yeovil', 'Loughborough', 'Havant', 'Chatham', 'East Kilbride', 'Farnborough', 
+  'Aylesbury', 'Hemel Hempstead', 'Woking', 'Halifax', 'Hartlepool', 'Gosport', 'Bognor Regis', 
+  'Gravesend', 'Darlington', 'Ashford', 'Halesowen', 'Canterbury', 'Stourbridge', 'St Helens', 
+  'Worcester', 'Gosport', 'Bebington', 'Bridlington', 'Camberley', 'Blyth', 'Keighley', 
+  'Paignton', 'Macclesfield', 'Bishop Auckland', 'Folkestone', 'Andover', 'Rugby', 'Newbury', 
+  'Ware', 'Bridgwater', 'Leatherhead', 'Havant', 'Burgess Hill', 'Staines', 'Weymouth', 
+  'Hitchin', 'Dunstable', 'Fareham', 'Letchworth', 'Horsham', 'Cumbernauld', 'Aldershot', 
+  'Bideford', 'Kidderminster', 'Morpeth', 'Fleetwood', 'Wallsend', 'Abingdon', 'Braintree', 
+  'Wickford', 'Rickmansworth', 'Littlehampton', 'Bingham', 'Bicester', 'Dartford', 'Waltham Cross', 
+  'Mablethorpe', 'Rayleigh', 'Sittingbourne', 'Ely', 'Ilkeston', 'Great Yarmouth', 'Hoddesdon', 
+  'Seaford', 'Beccles', 'Huntingdon', 'St Neots', 'Biggleswade', 'Sandy', 'Cromer', 'Sheringham', 
+  'Holt', 'Fakenham', 'Swaffham', 'Attleborough', 'Wymondham', 'Dereham', 'Watton', 'Thetford', 
+  'Brandon', 'Mildenhall', 'Newmarket', 'Soham', 'Ely', 'Littleport', 'Sutton Bridge', 'Long Sutton', 
+  'Spalding', 'Holbeach', 'Crowland', 'Market Deeping', 'Stamford', 'Bourne', 'Oakham', 'Uppingham', 
+  'Melton Mowbray', 'Loughborough', 'Shepshed', 'Ashby-de-la-Zouch', 'Coalville', 'Hinckley', 
+  'Market Harborough', 'Lutterworth', 'Rugby', 'Southam', 'Leamington Spa', 'Warwick', 'Kenilworth', 
+  'Stratford-upon-Avon', 'Shipston-on-Stour', 'Moreton-in-Marsh', 'Chipping Norton', 'Witney', 
+  'Carterton', 'Bampton', 'Faringdon', 'Wantage', 'Didcot', 'Wallingford', 'Henley-on-Thames', 
+  'Thame', 'Princes Risborough', 'Aylesbury', 'Wendover', 'Tring', 'Berkhamsted', 'Chesham', 
+  'Amersham', 'High Wycombe', 'Marlow', 'Beaconsfield', 'Gerrards Cross', 'Denham', 'Uxbridge', 
+  'Ruislip', 'Northwood', 'Pinner', 'Harrow', 'Wembley', 'Willesden', 'Kensal Green', 'Kilburn', 
+  'Cricklewood', 'Golders Green', 'Hampstead', 'Highgate', 'Muswell Hill', 'Crouch End', 
+  'Stoke Newington', 'Hackney', 'Homerton', 'Bow', 'Mile End', 'Stepney', 'Poplar', 'Isle of Dogs', 
+  'Canary Wharf', 'Limehouse', 'Wapping', 'Shadwell', 'Whitechapel', 'Aldgate', 'Spitalfields', 
+  'Brick Lane', 'Bethnal Green', 'Cambridge Heath', 'Haggerston', 'Hoxton', 'De Beauvoir Town', 
+  'Dalston', 'Stamford Hill', 'Clapton', 'Hackney Marshes', 'Leyton', 'Leytonstone', 'Wanstead', 
+  'Snaresbrook', 'South Woodford', 'Woodford', 'Buckhurst Hill', 'Loughton', 'Chigwell', 
+  'Grange Hill', 'Hainault', 'Fairlop', 'Barkingside', 'Clayhall', 'Redbridge', 'Gants Hill', 
+  'Newbury Park', 'Barkingside', 'Fullwell Cross', 'Hainault', 'Chadwell Heath', 'Romford', 
+  'Gidea Park', 'Harold Wood', 'Brentwood', 'Shenfield', 'Ingatestone', 'Mountnessing', 
+  'Billericay', 'Basildon', 'Wickford', 'Rayleigh', 'Hockley', 'Rochford', 'Ashingdon', 
+  'Canewdon', 'Great Wakering', 'Shoeburyness', 'Thorpe Bay', 'Southend-on-Sea', 'Leigh-on-Sea', 
+  'Westcliff-on-Sea', 'Chalkwell', 'Prittlewell', 'Eastwood', 'Rayleigh', 'Thundersley', 
+  'Benfleet', 'Canvey Island', 'Hadleigh', 'Thundersley', 'Bowers Gifford', 'Pitsea', 
+  'Vange', 'Basildon', 'Laindon', 'Langdon Hills', 'Lee Chapel', 'Fryerns', 'Craylands', 
+  'Ghyllgrove', 'Kingswood', 'Great Burstead', 'Billericay', 'Stock', 'Ramsden Bellhouse', 
+  'Mountnessing', 'Hutton', 'Shenfield', 'Brentwood', 'Warley', 'Great Warley', 'Little Warley', 
+  'Childerditch', 'Herongate', 'Ingrave', 'West Horndon', 'East Horndon', 'Billericay', 
+  'Ramsden Crays', 'Downham', 'Ramsden Heath', 'Nevendon', 'Bowers Gifford', 'Pitsea', 
+  'Vange', 'Basildon', 'Laindon', 'Langdon Hills', 'Dunton', 'Fobbing', 'Corringham', 
+  'Stanford-le-Hope', 'Mucking', 'Tilbury', 'Grays', 'Chadwell St Mary', 'Little Thurrock', 
+  'West Thurrock', 'South Stifford', 'North Stifford', 'Bulphan', 'Orsett', 'Horndon on the Hill', 
+  'Fobbing', 'Corringham', 'Stanford-le-Hope', 'East Tilbury', 'Linford', 'Tilbury', 
+  'Grays', 'Chadwell St Mary', 'Little Thurrock', 'West Thurrock', 'South Stifford', 
+  'North Stifford', 'Bulphan', 'Orsett', 'Horndon on the Hill', 'Fobbing', 'Corringham', 
+  'Stanford-le-Hope', 'East Tilbury', 'Linford',
+
+  // Scotland
+  'Edinburgh', 'Glasgow', 'Aberdeen', 'Dundee', 'Inverness', 'Perth', 'Stirling', 'Ayr', 
+  'Kilmarnock', 'Paisley', 'Greenock', 'Dumfries', 'Falkirk', 'Livingston', 'Cumbernauld', 
+  'East Kilbride', 'Hamilton', 'Motherwell', 'Coatbridge', 'Wishaw', 'Clydebank', 'Bearsden', 
+  'Milngavie', 'Bishopbriggs', 'Kirkintilloch', 'Lenzie', 'Stepps', 'Moodiesburn', 'Chryston', 
+  'Muirhead', 'Glenboig', 'Cumbernauld', 'Kilsyth', 'Denny', 'Bonnybridge', 'Larbert', 
+  'Stenhousemuir', 'Falkirk', 'Grangemouth', 'Bo\'ness', 'Linlithgow', 'Bathgate', 
+  'Whitburn', 'Armadale', 'Blackburn', 'Livingston', 'Broxburn', 'Uphall', 'Kirkliston', 
+  'South Queensferry', 'Dalmeny', 'Ratho', 'Newbridge', 'Ratho Station', 'Currie', 
+  'Balerno', 'Juniper Green', 'Colinton', 'Swanston', 'Fairmilehead', 'Buckstone', 
+  'Morningside', 'Newington', 'Prestonfield', 'Craigmillar', 'Niddrie', 'Portobello', 
+  'Joppa', 'Musselburgh', 'Dalkeith', 'Bonnyrigg', 'Lasswade', 'Loanhead', 'Roslin', 
+  'Bilston', 'Milton Bridge', 'Penicuik', 'Auchendinny', 'Howgate', 'Carlops', 
+  'West Linton', 'Dolphinton', 'Garvald', 'Gifford', 'Haddington', 'East Linton', 
+  'Dunbar', 'North Berwick', 'Gullane', 'Dirleton', 'Aberlady', 'Longniddry', 
+  'Macmerry', 'Tranent', 'Cockenzie', 'Port Seton', 'Prestonpans', 'Musselburgh', 
+  'Whitecraig', 'Danderhall', 'Sheriffhall', 'Millerhill', 'Newcraighall', 'Craigmillar', 
+  'Niddrie', 'Portobello', 'Joppa', 'Musselburgh', 'Dalkeith', 'Bonnyrigg', 'Lasswade', 
+  'Loanhead', 'Roslin', 'Bilston', 'Milton Bridge', 'Penicuik', 'Auchendinny', 'Howgate', 
+  'Carlops', 'West Linton', 'Dolphinton', 'Garvald', 'Gifford', 'Haddington', 'East Linton', 
+  'Dunbar', 'North Berwick', 'Gullane', 'Dirleton', 'Aberlady', 'Longniddry', 'Macmerry', 
+  'Tranent', 'Cockenzie', 'Port Seton', 'Prestonpans', 'Musselburgh', 'Whitecraig', 
+  'Danderhall', 'Sheriffhall', 'Millerhill', 'Newcraighall',
+
+  // Wales
+  'Cardiff', 'Swansea', 'Newport', 'Wrexham', 'Bangor', 'St Asaph', 'St Davids', 
+  'Aberystwyth', 'Carmarthen', 'Haverfordwest', 'Milford Haven', 'Fishguard', 
+  'Pembroke', 'Pembroke Dock', 'Tenby', 'Saundersfoot', 'Amroth', 'Narberth', 
+  'Whitland', 'Newcastle Emlyn', 'Llandeilo', 'Llandovery', 'Llanwrda', 'Llanwrtyd Wells', 
+  'Builth Wells', 'Llandrindod Wells', 'Knighton', 'Presteigne', 'Hay-on-Wye', 
+  'Talgarth', 'Crickhowell', 'Abergavenny', 'Usk', 'Caldicot', 'Chepstow', 
+  'Monmouth', 'Ross-on-Wye', 'Hereford', 'Leominster', 'Kington', 'Bromyard', 
+  'Ledbury', 'Malvern', 'Worcester', 'Droitwich', 'Bromsgrove', 'Redditch', 
+  'Kidderminster', 'Stourport-on-Severn', 'Bewdley', 'Bridgnorth', 'Shifnal', 
+  'Telford', 'Wellington', 'Oakengates', 'Dawley', 'Madeley', 'Ironbridge', 
+  'Coalbrookdale', 'Broseley', 'Much Wenlock', 'Church Stretton', 'Craven Arms', 
+  'Ludlow', 'Tenbury Wells', 'Cleobury Mortimer', 'Kidderminster', 'Stourport-on-Severn', 
+  'Bewdley', 'Bridgnorth', 'Shifnal', 'Telford', 'Wellington', 'Oakengates', 
+  'Dawley', 'Madeley', 'Ironbridge', 'Coalbrookdale', 'Broseley', 'Much Wenlock', 
+  'Church Stretton', 'Craven Arms', 'Ludlow', 'Tenbury Wells', 'Cleobury Mortimer',
+
+  // Northern Ireland
+  'Belfast', 'Derry', 'Lisburn', 'Newry', 'Armagh', 'Bangor', 'Craigavon', 
+  'Ballymena', 'Newtownabbey', 'Carrickfergus', 'Newtownards', 'Coleraine', 
+  'Antrim', 'Omagh', 'Larne', 'Banbridge', 'Portadown', 'Dungannon', 'Enniskillen', 
+  'Strabane', 'Limavady', 'Cookstown', 'Magherafelt', 'Downpatrick', 'Ballynahinch', 
+  'Comber', 'Holywood', 'Bangor', 'Donaghadee', 'Groomsport', 'Millisle', 'Ballywalter', 
+  'Portavogie', 'Kircubbin', 'Ballygowan', 'Saintfield', 'Crossgar', 'Downpatrick', 
+  'Killough', 'Ardglass', 'Strangford', 'Portaferry', 'Killyleagh', 'Ballynahinch', 
+  'Hillsborough', 'Dromore', 'Banbridge', 'Rathfriland', 'Newry', 'Warrenpoint', 
+  'Rostrevor', 'Kilkeel', 'Annalong', 'Newcastle', 'Castlewellan', 'Dundrum', 
+  'Ballykinler', 'Clough', 'Ballynahinch', 'Saintfield', 'Crossgar', 'Downpatrick', 
+  'Killough', 'Ardglass', 'Strangford', 'Portaferry', 'Killyleagh', 'Ballynahinch', 
+  'Hillsborough', 'Dromore', 'Banbridge', 'Rathfriland', 'Newry', 'Warrenpoint', 
+  'Rostrevor', 'Kilkeel', 'Annalong', 'Newcastle', 'Castlewellan', 'Dundrum', 
+  'Ballykinler', 'Clough',
+
+  // Crown Dependencies
+  'Douglas', 'Castletown', 'Peel', 'Ramsey', // Isle of Man
+  'St Helier', 'St Aubin', 'Gorey', // Jersey
+  'St Peter Port', 'St Sampson' // Guernsey
+];
 
   const DEPARTMENTS = ['IT', 'HR', 'Finance', 'Marketing', 'Operations', 'Sales', 'Engineering'];
 
@@ -495,9 +1126,10 @@ const EmployeeStepForm = ({
     { title: 'Personal & Visa', component: PersonalInfoStep },
     { title: 'Education', component: EducationStep },
     { title: 'Employment', component: EmploymentStep },
+    { title: 'Next of Kin', component: NextOfKinStep },
   ];
 
-  const isStepValid = () => {
+    const isStepValid = () => {
     switch (currentStep) {
       case 0:
         return (
@@ -516,6 +1148,19 @@ const EmployeeStepForm = ({
         );
       case 2:
         return formData.department && formData.jobTitle && formData.startDate && formData.salary;
+      case 3:
+        // Validate next of kin - at least one required, and primary fields must be filled
+        return formData.nextOfKins.length > 0 && 
+               formData.nextOfKins.every(kin => 
+                 kin.fullName && 
+                 kin.relationship && 
+                 kin.dateOfBirth && 
+                 kin.gender && 
+                 kin.address && 
+                 kin.city && 
+                 kin.country && 
+                 kin.phoneNumber
+               );
       default:
         return false;
     }
@@ -523,14 +1168,19 @@ const EmployeeStepForm = ({
 
   const renderStepComponent = () => {
     const commonProps = {
-      formData,
+       formData,
       onInputChange,
       onEducationChange,
       onFileUpload,
       onAddEducation,
       onRemoveEducation,
+      onNextOfKinChange,
+      onAddNextOfKin,
+      onRemoveNextOfKin,
       visaFile,
       setVisaFile,
+      profilePicture,
+      setProfilePicture,
     };
 
     switch (currentStep) {
@@ -540,6 +1190,8 @@ const EmployeeStepForm = ({
         return <EducationStep {...commonProps} />;
       case 2:
         return <EmploymentStep {...commonProps} departments={DEPARTMENTS} jobTitles={JOB_TITLES} />;
+      case 3:
+        return <NextOfKinStep {...commonProps} />;
       default:
         return null;
     }
@@ -559,7 +1211,7 @@ const EmployeeStepForm = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900">
@@ -606,8 +1258,7 @@ const EmployeeStepForm = ({
           </div>
         </div>
 
-        <form onSubmit={handleFinalSubmit} 
-               className="p-6">
+        <form onSubmit={handleFinalSubmit} className="p-6">
           {renderStepComponent()}
 
           {/* Navigation Buttons */}
@@ -679,12 +1330,23 @@ const EmployeeList = () => {
   const [formLoading, setFormLoading] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [visaFile, setVisaFile] = useState(null);
+  const [profilePicture, setProfilePicture] = useState(null);
 
   const recordsPerPage = 5;
 
   const [formData, setFormData] = useState({
+      title: '',
     firstName: '',
+    middleName: '',
     lastName: '',
+    dateOfBirth: '',
+    placeOfBirth: '',
+    gender: '',
+    bloodGroup: '',
+    maritalStatus: '',
+    contactNo: '',
+    mobileNo: '',
+    email: '',
     country: 'United Kingdom',
     city: '',
     nationality: '',
@@ -698,7 +1360,66 @@ const EmployeeList = () => {
     salary: '',
     isActive: true,
     educations: [{ degree: '', institute: '', passingYear: '', file: null }],
+      nextOfKins: [{
+      fullName: '',
+      relationship: '',
+      dateOfBirth: '',
+      gender: '',
+      address: '',
+      city: '',
+      country: 'United Kingdom',
+      phoneNumber: '',
+      alternatePhoneNumber: '',
+      email: '',
+      occupation: '',
+      isPrimary: true
+    }],
   });
+
+    // Add Next of Kin handlers
+  const handleNextOfKinChange = useCallback((idx, field, value) => {
+    setFormData(prev => {
+      const newNextOfKins = [...prev.nextOfKins];
+      newNextOfKins[idx] = {
+        ...newNextOfKins[idx],
+        [field]: value
+      };
+      return {
+        ...prev,
+        nextOfKins: newNextOfKins
+      };
+    });
+  }, []);
+
+  const addNextOfKinField = useCallback(() => {
+    setFormData(prev => ({
+      ...prev,
+      nextOfKins: [
+        ...prev.nextOfKins,
+        {
+          fullName: '',
+          relationship: '',
+          dateOfBirth: '',
+          gender: '',
+          address: '',
+          city: '',
+          country: 'United Kingdom',
+          phoneNumber: '',
+          alternatePhoneNumber: '',
+          email: '',
+          occupation: '',
+          isPrimary: false // New ones are not primary by default
+        }
+      ]
+    }));
+  }, []);
+
+  const removeNextOfKinField = useCallback((idx) => {
+    setFormData(prev => ({
+      ...prev,
+      nextOfKins: prev.nextOfKins.filter((_, i) => i !== idx)
+    }));
+  }, []);
 
   // Fetch Employees
   const fetchEmployees = async () => {
@@ -818,6 +1539,16 @@ const EmployeeList = () => {
       }
     });
 
+        Object.keys(formData).forEach(key => {
+        if (key !== 'educations' && key !== 'nextOfKins') {
+          submitData.append(key, formData[key]);
+        }
+      });
+
+     if (profilePicture) {
+        submitData.append('profilePicture', profilePicture);
+      }
+
     // Add educations as JSON
     const eduJson = formData.educations.map(edu => ({
       degree: edu.degree,
@@ -825,6 +1556,22 @@ const EmployeeList = () => {
       passingYear: edu.passingYear,
     }));
     submitData.append('educations', JSON.stringify(eduJson));
+
+     const nextOfKinJson = formData.nextOfKins.map(kin => ({
+        fullName: kin.fullName,
+        relationship: kin.relationship,
+        dateOfBirth: kin.dateOfBirth,
+        gender: kin.gender,
+        address: kin.address,
+        city: kin.city,
+        country: kin.country,
+        phoneNumber: kin.phoneNumber,
+        alternatePhoneNumber: kin.alternatePhoneNumber,
+        email: kin.email,
+        occupation: kin.occupation,
+        isPrimary: kin.isPrimary
+      }));
+      submitData.append('nextOfKins', JSON.stringify(nextOfKinJson));
 
     // ✅ FIX: Use indexed fieldnames for education files
     formData.educations.forEach((edu, idx) => {
@@ -945,10 +1692,20 @@ const handleEditEmployee = async (e) => {
   };
 
   // Form Helpers
-  const resetForm = useCallback(() => {
+   const resetForm = useCallback(() => {
     setFormData({
+      title: '',
       firstName: '',
+      middleName: '',
       lastName: '',
+      dateOfBirth: '',
+      placeOfBirth: '',
+      gender: '',
+      bloodGroup: '',
+      maritalStatus: '',
+      contactNo: '',
+      mobileNo: '',
+      email: '',
       country: 'United Kingdom',
       city: '',
       nationality: '',
@@ -962,41 +1719,98 @@ const handleEditEmployee = async (e) => {
       salary: '',
       isActive: true,
       educations: [{ degree: '', institute: '', passingYear: '', file: null }],
+      nextOfKins: [{
+        fullName: '',
+        relationship: '',
+        dateOfBirth: '',
+        gender: '',
+        address: '',
+        city: '',
+        country: 'United Kingdom',
+        phoneNumber: '',
+        alternatePhoneNumber: '',
+        email: '',
+        occupation: '',
+        isPrimary: true
+      }],
     });
     setVisaFile(null);
+    setProfilePicture(null);
   }, []);
 
-  const openEditForm = useCallback((emp) => {
-  setEditingEmployee(emp);
-  const newFormData = {
-    firstName: emp.firstName || '',
-    lastName: emp.lastName || '',
-    country: emp.country || 'United Kingdom',
-    city: emp.city || '',
-    nationality: emp.nationality || '',
-    address: emp.address || '',
-    visaType: emp.visaType || '',
-    visaExpiry: emp.visaExpiry ? dayjs(emp.visaExpiry).format('YYYY-MM-DD') : '',
-    visaDocumentPath: emp.visaDocumentPath || '', // Use visaDocumentPath from model
-    department: emp.department || '',
-    jobTitle: emp.jobTitle || '',
-    startDate: emp.startDate ? dayjs(emp.startDate).format('YYYY-MM-DD') : '',
-    salary: emp.salary || '',
-    isActive: emp.isActive ?? true,
-    educations: emp.educations?.length > 0
-      ? emp.educations.map(e => ({
-          degree: e.degree || '',
-          institute: e.institute || '',
-          passingYear: e.passingYear || '',
-          file: null, // For new uploads
-          documentPath: e.documentPath || '', // Use documentPath from model
-        }))
-      : [{ degree: '', institute: '', passingYear: '', file: null, documentPath: '' }],
-  };
-  setFormData(newFormData);
-  setVisaFile(null);
-  setShowEditForm(true);
-}, []);
+   const openEditForm = useCallback((emp) => {
+    setEditingEmployee(emp);
+    const newFormData = {
+      title: emp.title || '',
+      firstName: emp.firstName || '',
+      middleName: emp.middleName || '',
+      lastName: emp.lastName || '',
+      dateOfBirth: emp.dateOfBirth ? dayjs(emp.dateOfBirth).format('YYYY-MM-DD') : '',
+      placeOfBirth: emp.placeOfBirth || '',
+      gender: emp.gender || '',
+      bloodGroup: emp.bloodGroup || '',
+      maritalStatus: emp.maritalStatus || '',
+      contactNo: emp.contactNo || '',
+      mobileNo: emp.mobileNo || '',
+      email: emp.email || '',
+      country: emp.country || 'United Kingdom',
+      city: emp.city || '',
+      nationality: emp.nationality || '',
+      address: emp.address || '',
+      visaType: emp.visaType || '',
+      visaExpiry: emp.visaExpiry ? dayjs(emp.visaExpiry).format('YYYY-MM-DD') : '',
+      visaDocumentPath: emp.visaDocumentPath || '',
+      department: emp.department || '',
+      jobTitle: emp.jobTitle || '',
+      startDate: emp.startDate ? dayjs(emp.startDate).format('YYYY-MM-DD') : '',
+      salary: emp.salary || '',
+      isActive: emp.isActive ?? true,
+      profilePicturePath: emp.profilePicturePath || '',
+      educations: emp.educations?.length > 0
+        ? emp.educations.map(e => ({
+            degree: e.degree || '',
+            institute: e.institute || '',
+            passingYear: e.passingYear || '',
+            file: null,
+            documentPath: e.documentPath || '',
+          }))
+        : [{ degree: '', institute: '', passingYear: '', file: null, documentPath: '' }],
+
+        nextOfKins: emp.nextOfKins?.length > 0
+        ? emp.nextOfKins.map(kin => ({
+            fullName: kin.fullName || '',
+            relationship: kin.relationship || '',
+            dateOfBirth: kin.dateOfBirth ? dayjs(kin.dateOfBirth).format('YYYY-MM-DD') : '',
+            gender: kin.gender || '',
+            address: kin.address || '',
+            city: kin.city || '',
+            country: kin.country || 'United Kingdom',
+            phoneNumber: kin.phoneNumber || '',
+            alternatePhoneNumber: kin.alternatePhoneNumber || '',
+            email: kin.email || '',
+            occupation: kin.occupation || '',
+            isPrimary: kin.isPrimary || false
+          }))
+        : [{
+            fullName: '',
+            relationship: '',
+            dateOfBirth: '',
+            gender: '',
+            address: '',
+            city: '',
+            country: 'United Kingdom',
+            phoneNumber: '',
+            alternatePhoneNumber: '',
+            email: '',
+            occupation: '',
+            isPrimary: true
+          }],
+    };
+    setFormData(newFormData);
+    setVisaFile(null);
+    setProfilePicture(null);
+    setShowEditForm(true);
+  }, []);
 
   // Visa Status Helpers
   const getVisaStatusColor = (expiry) => {
@@ -1062,7 +1876,7 @@ const handleEditEmployee = async (e) => {
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="p-6 bg-gray-50">
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8">
         <div>
@@ -1169,13 +1983,28 @@ const handleEditEmployee = async (e) => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {indexOfFirst + i + 1}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {emp.firstName} {emp.lastName}
+                     <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
+                        <div className="flex-shrink-0">
+                          {emp.profilePicturePath ? (
+                            <img 
+                              src={`http://localhost:5000/uploads/${emp.profilePicturePath}`}
+                              alt={`${emp.firstName} ${emp.lastName}`}
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-medium">
+                              {emp.firstName?.charAt(0)}{emp.lastName?.charAt(0)}
+                            </div>
+                          )}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {emp.city}, {emp.country}
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {emp.title} {emp.firstName} {emp.middleName ? `${emp.middleName} ` : ''}{emp.lastName}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {emp.city}, {emp.country}
+                          </div>
                         </div>
                       </div>
                     </td>
@@ -1315,12 +2144,17 @@ const handleEditEmployee = async (e) => {
           onRemoveEducation={removeEducationField}
           visaFile={visaFile}
           setVisaFile={setVisaFile}
+          profilePicture={profilePicture}
+          setProfilePicture={setProfilePicture}
           formLoading={formLoading}
+                onNextOfKinChange={handleNextOfKinChange}
+        onAddNextOfKin={addNextOfKinField}
+        onRemoveNextOfKin={removeNextOfKinField}
         />
       )}
 
       {/* EDIT FORM */}
-      {showEditForm && (
+            {showEditForm && (
         <EmployeeStepForm
           isEdit={true}
           onClose={() => {
@@ -1337,8 +2171,9 @@ const handleEditEmployee = async (e) => {
           onRemoveEducation={removeEducationField}
           visaFile={visaFile}
           setVisaFile={setVisaFile}
+          profilePicture={profilePicture}
+          setProfilePicture={setProfilePicture}
           formLoading={formLoading}
-
         />
       )}
 

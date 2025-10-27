@@ -25,17 +25,13 @@ const Layout = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <Sidebar />
-
-      {/* Main content area */}
-      <div className="flex flex-col flex-1">
-        <Header handleLogout={handleLogout} />
-        <main className="flex-1 overflow-auto p-6 bg-gray-50">
+    <div className="flex flex-col h-screen">
+      <Header handleLogout={handleLogout} />
+      <div className="flex flex-1 min-h-screen">
+        <Sidebar />
+        <main className="flex-1 overflow-auto m-6">
           <Outlet />
         </main>
-        <Footer />
       </div>
     </div>
   );

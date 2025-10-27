@@ -13,7 +13,6 @@ import Login from './pages/auth/Login.jsx';
 import Signup from './pages/auth/Signup.jsx';
 import Dashboard from './pages/dashboard/Dashboard.jsx';
 import Layout from './components/layout/Layout.jsx';
-import EmployeeList2 from './pages/employee/employees-prev.jsx';
 
 const App = () => {
 
@@ -21,7 +20,6 @@ const App = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          <Route path="/employeeList2" element={<EmployeeList2 />} />
           
           {/* Dashboard & nested routes - no protection */}
           <Route path="/dashboard" element={<Layout />}>
