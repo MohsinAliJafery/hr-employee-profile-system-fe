@@ -83,16 +83,16 @@ const PersonalInfoStep = ({
         <div className="flex items-center gap-6">
           <div className="flex-shrink-0">
             {profilePicture ? (
-              <img 
+               <img 
                 src={URL.createObjectURL(profilePicture)} 
                 alt="Profile preview" 
-                className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
+                className="w-32 h-32 rounded-full object-cover border-2 border-gray-300"
               />
             ) : formData.profilePicturePath ? (
               <img 
                 src={`http://localhost:5000/uploads/${formData.profilePicturePath}`}
                 alt="Current profile" 
-                className="w-24 h-24 rounded-full object-cover border-2 border-gray-300"
+                className="w-32 h-32 rounded-full object-cover border-2 border-gray-300"
               />
             ) : (
               <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center border-2 border-dashed border-gray-300">
@@ -625,7 +625,7 @@ const EmploymentStep = ({
   jobTitles
 }) => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 h-auto py-[70px]">
       <div>
         <h3 className="text-xl font-semibold text-gray-900 mb-2">Employment Details</h3>
         <p className="text-gray-600 mb-6">Company position and compensation information</p>
@@ -962,6 +962,204 @@ const NextOfKinStep = ({
   );
 };
 
+// Step 5 Component - Documents Upload
+const DocumentsStep = ({
+  formData,
+  onDocumentChange,
+  onDocumentFileUpload,
+  onAddDocument,
+  onRemoveDocument
+}) => {
+  const DOCUMENT_TYPES = [
+    'CAS Letter',
+    'Passport',
+    'Visa Card', 
+    'BRP Card',
+    'Driving License',
+    'NI Number',
+    'Bank Statement',
+    'Utility Bill',
+    'Tenancy Agreement',
+    'Employment Contract',
+    'Payslip',
+    'CV/Resume',
+    'References',
+    'Qualifications',
+    'DBS Certificate',
+    'Other'
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-xl font-semibold text-gray-900 mb-2">Documents Upload</h3>
+        <p className="text-gray-600 mb-6">Upload all required documents for the employee</p>
+      </div>
+
+      {formData.documents.map((doc, index) => (
+        <div key={index} className="border border-gray-200 rounded-lg p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="text-lg font-medium text-gray-900">Document #{index + 1}</h4>
+            {formData.documents.length > 1 && (
+              <button
+                type="button"
+                onClick={() => onRemoveDocument(index)}
+                className="text-red-600 hover:text-red-700"
+              >
+                <X size={20} />
+              </button>
+            )}
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Document Type Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Document Type
+              </label>
+              <select
+                value={doc.documentType || ''}
+                onChange={(e) => onDocumentChange(index, 'documentType', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Select Document Type</option>
+                {DOCUMENT_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Custom Document Title */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Document Title *
+              </label>
+              <input
+                type="text"
+                value={doc.documentTitle || ''}
+                onChange={(e) => onDocumentChange(index, 'documentTitle', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., UK Passport Bio Page"
+                required
+              />
+            </div>
+
+            {/* Document Upload - Full width */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Upload Document
+              </label>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
+                    <Upload size={16} />
+                    {doc.documentPath ? 'Change Document' : 'Choose Document'}
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          onDocumentFileUpload(index, file);
+                        }
+                      }}
+                    />
+                  </label>
+                  
+                  {/* Show current document from database with download link */}
+                  {!doc.file && doc.documentPath && (
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 text-sm text-green-600">
+                        <FileText size={16} />
+                        <span>Current: </span>
+                      </div>
+                      <a 
+                        href={`http://localhost:5000/uploads/${doc.documentPath}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 text-sm underline flex items-center gap-1"
+                      >
+                        <Eye size={14} />
+                        View
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => onRemoveDocument(index)}
+                        className="text-red-600 hover:text-red-800 text-sm flex items-center gap-1"
+                      >
+                        <Trash2 size={14} />
+                        Delete
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* Show newly selected file */}
+                  {doc.file && (
+                    <div className="flex items-center gap-2 text-sm text-blue-600">
+                      <FileText size={16} />
+                      <span>New: {doc.file.name}</span>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {doc.documentPath ? 'Current file will be kept if no new file is selected' : 'Supported formats: PDF, DOC, DOCX, JPG, PNG, WEBP (Max 5MB)'}
+                </p>
+              </div>
+            </div>
+
+            {/* Description (Optional) */}
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Description (Optional)
+              </label>
+              <textarea
+                value={doc.description || ''}
+                onChange={(e) => onDocumentChange(index, 'description', e.target.value)}
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Add any additional notes about this document..."
+              />
+            </div>
+          </div>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        onClick={onAddDocument}
+        className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
+      >
+        <Plus size={16} />
+        Add Another Document
+      </button>
+
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+        <div className="flex items-start">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <h3 className="text-sm font-medium text-blue-800">Document Requirements</h3>
+            <div className="mt-2 text-sm text-blue-700">
+              <ul className="list-disc list-inside space-y-1">
+                <li>Upload all required documents for employment verification</li>
+                <li>Accepted formats: PDF, DOC, DOCX, JPG, PNG, WEBP</li>
+                <li>Maximum file size: 5MB per document</li>
+                <li>Ensure documents are clear and readable</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Main Step Form Component
 const EmployeeStepForm = ({
     isEdit = false,
@@ -976,6 +1174,10 @@ const EmployeeStepForm = ({
   onNextOfKinChange,
   onAddNextOfKin,
   onRemoveNextOfKin,
+    onDocumentChange,           // New
+  onDocumentFileUpload,       // New
+  onAddDocument,              // New
+  onRemoveDocument,  
   visaFile,
   setVisaFile,
   profilePicture,
@@ -1126,6 +1328,7 @@ const EmployeeStepForm = ({
     { title: 'Personal & Visa', component: PersonalInfoStep },
     { title: 'Education', component: EducationStep },
     { title: 'Employment', component: EmploymentStep },
+    { title: 'Documents', component: DocumentsStep },
     { title: 'Next of Kin', component: NextOfKinStep },
   ];
 
@@ -1148,7 +1351,12 @@ const EmployeeStepForm = ({
         );
       case 2:
         return formData.department && formData.jobTitle && formData.startDate && formData.salary;
-      case 3:
+      case 3: // Documents step
+      // All documents must have a title and either a file or existing document path
+      return formData.documents.every(doc => 
+        doc.documentTitle && (doc.file || doc.documentPath)
+      );
+      case 4:
         // Validate next of kin - at least one required, and primary fields must be filled
         return formData.nextOfKins.length > 0 && 
                formData.nextOfKins.every(kin => 
@@ -1168,19 +1376,23 @@ const EmployeeStepForm = ({
 
   const renderStepComponent = () => {
     const commonProps = {
-       formData,
-      onInputChange,
-      onEducationChange,
-      onFileUpload,
-      onAddEducation,
-      onRemoveEducation,
-      onNextOfKinChange,
-      onAddNextOfKin,
-      onRemoveNextOfKin,
-      visaFile,
-      setVisaFile,
-      profilePicture,
-      setProfilePicture,
+        formData,
+    onInputChange,
+    onEducationChange,
+    onFileUpload,
+    onAddEducation,
+    onRemoveEducation,
+    onDocumentChange,
+    onDocumentFileUpload,
+    onAddDocument,
+    onRemoveDocument,
+    onNextOfKinChange,
+    onAddNextOfKin,
+    onRemoveNextOfKin,
+    visaFile,
+    setVisaFile,
+    profilePicture,
+    setProfilePicture,
     };
 
     switch (currentStep) {
@@ -1191,6 +1403,8 @@ const EmployeeStepForm = ({
       case 2:
         return <EmploymentStep {...commonProps} departments={DEPARTMENTS} jobTitles={JOB_TITLES} />;
       case 3:
+        return <DocumentsStep {...commonProps} />;
+      case 4:
         return <NextOfKinStep {...commonProps} />;
       default:
         return null;
@@ -1210,8 +1424,8 @@ const EmployeeStepForm = ({
 };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white w-full max-h-[100vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold text-gray-900">
@@ -1374,7 +1588,76 @@ const EmployeeList = () => {
       occupation: '',
       isPrimary: true
     }],
+      documents: [{
+    documentType: '',
+    documentTitle: '',
+    description: '',
+    file: null
+  }],
   });
+
+  // Add document handlers:
+const handleDocumentChange = useCallback((idx, field, value) => {
+  setFormData(prev => {
+    const newDocuments = [...prev.documents];
+    newDocuments[idx] = {
+      ...newDocuments[idx],
+      [field]: value
+    };
+    return {
+      ...prev,
+      documents: newDocuments
+    };
+  });
+}, []);
+
+const handleDocumentFileUpload = useCallback((idx, file) => {
+  console.log(`Uploading document file for document ${idx}:`, file.name);
+  setFormData(prev => {
+    const newDocuments = [...prev.documents];
+    if (!newDocuments[idx]) {
+      newDocuments[idx] = { 
+        documentType: '', 
+        documentTitle: '', 
+        description: '', 
+        file: null 
+      };
+    }
+    newDocuments[idx] = {
+      ...newDocuments[idx],
+      file: file
+    };
+    
+    console.log('Updated documents array:', newDocuments);
+    return {
+      ...prev,
+      documents: newDocuments
+    };
+  });
+}, []);
+
+const addDocumentField = useCallback(() => {
+  setFormData(prev => ({
+    ...prev,
+    documents: [
+      ...prev.documents,
+      { 
+        documentType: '', 
+        documentTitle: '', 
+        description: '', 
+        file: null 
+      }
+    ]
+  }));
+}, []);
+
+const removeDocumentField = useCallback((idx) => {
+  setFormData(prev => ({
+    ...prev,
+    documents: prev.documents.filter((_, i) => i !== idx)
+  }));
+}, []);
+
 
     // Add Next of Kin handlers
   const handleNextOfKinChange = useCallback((idx, field, value) => {
@@ -1515,10 +1798,18 @@ const EmployeeList = () => {
       edu.degree && edu.institute && edu.passingYear
     );
     
+    // ✅ Validate that documents have required fields
+    const hasValidDocuments = formData.documents.every(doc => 
+      doc.documentTitle && (doc.file || doc.documentPath)
+    );
+
     if (!hasValidEducations) {
       toast.error('Please fill all required education fields');
       return;
     }
+
+  
+
 
     // ✅ Log education files for debugging
     console.log('Education files to upload:');
@@ -1556,6 +1847,20 @@ const EmployeeList = () => {
       passingYear: edu.passingYear,
     }));
     submitData.append('educations', JSON.stringify(eduJson));
+
+        const docJson = formData.documents.map(doc => ({
+      documentType: doc.documentType,
+      documentTitle: doc.documentTitle,
+      description: doc.description,
+    }));
+    submitData.append('documents', JSON.stringify(docJson));
+
+    // ✅ FIX: Use indexed fieldnames for document files
+    formData.documents.forEach((doc, idx) => {
+      if (doc.file) {
+        submitData.append(`documentFiles[${idx}]`, doc.file);
+      }
+    });
 
      const nextOfKinJson = formData.nextOfKins.map(kin => ({
         fullName: kin.fullName,
@@ -1733,6 +2038,12 @@ const handleEditEmployee = async (e) => {
         occupation: '',
         isPrimary: true
       }],
+        documents: [{
+      documentType: '',
+      documentTitle: '',
+      description: '',
+      file: null
+    }],
     });
     setVisaFile(null);
     setProfilePicture(null);
@@ -1805,6 +2116,21 @@ const handleEditEmployee = async (e) => {
             occupation: '',
             isPrimary: true
           }],
+              documents: emp.documents?.length > 0
+      ? emp.documents.map(doc => ({
+          documentType: doc.documentType || '',
+          documentTitle: doc.documentTitle || '',
+          description: doc.description || '',
+          file: null,
+          documentPath: doc.documentPath || '',
+        }))
+      : [{
+          documentType: '',
+          documentTitle: '',
+          description: '',
+          file: null,
+          documentPath: ''
+        }],
     };
     setFormData(newFormData);
     setVisaFile(null);
@@ -2130,50 +2456,61 @@ const handleEditEmployee = async (e) => {
       {/* ADD FORM */}
       {showAddForm && (
         <EmployeeStepForm
-          isEdit={false}
-          onClose={() => {
-            setShowAddForm(false);
-            resetForm();
-          }}
-          onSubmit={handleAddEmployee}
-          formData={formData}
-          onInputChange={handleInputChange}
-          onEducationChange={handleEducationChange}
-          onFileUpload={handleFileUpload}
-          onAddEducation={addEducationField}
-          onRemoveEducation={removeEducationField}
-          visaFile={visaFile}
-          setVisaFile={setVisaFile}
-          profilePicture={profilePicture}
-          setProfilePicture={setProfilePicture}
-          formLoading={formLoading}
-                onNextOfKinChange={handleNextOfKinChange}
-        onAddNextOfKin={addNextOfKinField}
-        onRemoveNextOfKin={removeNextOfKinField}
-        />
+    isEdit={false}
+    onClose={() => {
+      setShowAddForm(false);
+      resetForm();
+    }}
+    onSubmit={handleAddEmployee}
+    formData={formData}
+    onInputChange={handleInputChange}
+    onEducationChange={handleEducationChange}
+    onFileUpload={handleFileUpload}
+    onAddEducation={addEducationField}
+    onRemoveEducation={removeEducationField}
+    onDocumentChange={handleDocumentChange}
+    onDocumentFileUpload={handleDocumentFileUpload}
+    onAddDocument={addDocumentField}
+    onRemoveDocument={removeDocumentField}
+    visaFile={visaFile}
+    setVisaFile={setVisaFile}
+    profilePicture={profilePicture}
+    setProfilePicture={setProfilePicture}
+    formLoading={formLoading}
+    onNextOfKinChange={handleNextOfKinChange}
+    onAddNextOfKin={addNextOfKinField}
+    onRemoveNextOfKin={removeNextOfKinField}
+  />
       )}
 
       {/* EDIT FORM */}
             {showEditForm && (
         <EmployeeStepForm
-          isEdit={true}
-          onClose={() => {
-            setShowEditForm(false);
-            setEditingEmployee(null);
-            resetForm();
-          }}
-          onSubmit={handleEditEmployee}
-          formData={formData}
-          onInputChange={handleInputChange}
-          onEducationChange={handleEducationChange}
-          onFileUpload={handleFileUpload}
-          onAddEducation={addEducationField}
-          onRemoveEducation={removeEducationField}
-          visaFile={visaFile}
-          setVisaFile={setVisaFile}
-          profilePicture={profilePicture}
-          setProfilePicture={setProfilePicture}
-          formLoading={formLoading}
+    isEdit={true}
+    onClose={() => {
+      setShowEditForm(false);
+      setEditingEmployee(null);
+      resetForm();
+    }}
+    onSubmit={handleEditEmployee}
+    formData={formData}
+    onInputChange={handleInputChange}
+    onEducationChange={handleEducationChange}
+    onFileUpload={handleFileUpload}
+    onAddEducation={addEducationField}
+    onRemoveEducation={removeEducationField}
+    onDocumentChange={handleDocumentChange}
+    onDocumentFileUpload={handleDocumentFileUpload}
+    onAddDocument={addDocumentField}
+    onRemoveDocument={removeDocumentField}
+    visaFile={visaFile}
+    setVisaFile={setVisaFile}
+    profilePicture={profilePicture}
+    setProfilePicture={setProfilePicture}
+    formLoading={formLoading}
+    onNextOfKinChange={handleNextOfKinChange}
+    onAddNextOfKin={addNextOfKinField}
+    onRemoveNextOfKin={removeNextOfKinField}
         />
       )}
 
