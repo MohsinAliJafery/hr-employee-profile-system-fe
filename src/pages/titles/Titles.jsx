@@ -3,51 +3,75 @@ import { Edit, Trash2 } from 'lucide-react';
 
 const TitlesList = () => {
   const [titles, setTitles] = useState([
-    { id: 1, title: 'Mr.' },
-    { id: 2, title: 'Mrs.' },
-    { id: 3, title: 'Miss' },
-    { id: 4, title: 'Dr.' },
-    { id: 5, title: 'Prof.' },
-    { id: 6, title: 'Engr.' },
-    { id: 7, title: 'Sir' },
+    { id: 1, title: 'Mr.', isActive: true, isDefault: true },
+    { id: 2, title: 'Mrs.', isActive: true, isDefault: false },
+    { id: 3, title: 'Miss', isActive: false, isDefault: false },
+    { id: 4, title: 'Dr.', isActive: true, isDefault: false },
+    { id: 5, title: 'Prof.', isActive: true, isDefault: false },
+    { id: 6, title: 'Engr.', isActive: false, isDefault: false },
+    { id: 7, title: 'Sir', isActive: true, isDefault: false },
   ]);
 
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ title: '' });
+  const [formData, setFormData] = useState({
+    title: '',
+    isActive: false,
+    isDefault: false,
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 5;
 
-  // Pagination logic
   const totalPages = Math.ceil(titles.length / pageSize);
   const paginatedData = titles.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, type, checked, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value,
+    });
+  };
 
   const handleAdd = () => {
     if (!formData.title) return alert('Please enter a title');
-    const newTitle = { id: Date.now(), title: formData.title };
+    const newTitle = {
+      id: Date.now(),
+      title: formData.title,
+      isActive: formData.isActive,
+      isDefault: formData.isDefault,
+    };
     setTitles([...titles, newTitle]);
-    setFormData({ title: '' });
+    setFormData({ title: '', isActive: false, isDefault: false });
   };
 
   const handleEdit = (id) => {
     const t = titles.find((x) => x.id === id);
     setEditingId(id);
-    setFormData({ title: t.title });
+    setFormData({
+      title: t.title,
+      isActive: t.isActive,
+      isDefault: t.isDefault,
+    });
   };
 
   const handleSave = () => {
     setTitles((prev) =>
       prev.map((t) =>
-        t.id === editingId ? { ...t, title: formData.title } : t
+        t.id === editingId
+          ? {
+              ...t,
+              title: formData.title,
+              isActive: formData.isActive,
+              isDefault: formData.isDefault,
+            }
+          : t
       )
     );
     setEditingId(null);
-    setFormData({ title: '' });
+    setFormData({ title: '', isActive: false, isDefault: false });
   };
 
   const handleDelete = (id) => {
@@ -61,14 +85,36 @@ const TitlesList = () => {
       <h2 className="text-2xl font-semibold mb-4">🎓 Title Management</h2>
 
       {/* Add / Edit Section */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
         <input
           name="title"
           value={formData.title}
           onChange={handleChange}
           placeholder="Enter Title (e.g. Mr., Dr.)"
-          className="border p-2 rounded w-1/3"
+          className="border p-2 rounded w-1/4"
         />
+
+        <label className="flex items-center gap-1">
+          <input
+            type="checkbox"
+            name="isActive"
+            checked={formData.isActive}
+            onChange={handleChange}
+            className="h-5 w-5 accent-blue-600 cursor-pointer"
+          />
+          Active
+        </label>
+
+        <label className="flex items-center gap-1">
+          <input
+            type="checkbox"
+            name="isDefault"
+            checked={formData.isDefault}
+            onChange={handleChange}
+            className="h-5 w-5 accent-green-600 cursor-pointer"
+          />
+          Default
+        </label>
 
         {editingId ? (
           <button
@@ -93,6 +139,8 @@ const TitlesList = () => {
           <tr className="bg-blue-100 text-left">
             <th className="border p-2">#</th>
             <th className="border p-2">Title</th>
+            <th className="border p-2 text-center">Active</th>
+            <th className="border p-2 text-center">Default</th>
             <th className="border p-2 text-center">Actions</th>
           </tr>
         </thead>
@@ -102,20 +150,81 @@ const TitlesList = () => {
               <td className="border p-2">
                 {index + 1 + (currentPage - 1) * pageSize}
               </td>
-              <td className="border p-2">{t.title}</td>
+
+              {/* Editable title */}
+              <td className="border p-2">
+                {editingId === t.id ? (
+                  <input
+                    type="text"
+                    name="title"
+                    value={formData.title}
+                    onChange={handleChange}
+                    className="border p-1 rounded w-full"
+                  />
+                ) : (
+                  t.title
+                )}
+              </td>
+
+              {/* isActive checkbox */}
+              <td className="border p-2 text-center">
+                {editingId === t.id ? (
+                  <input
+                    type="checkbox"
+                    name="isActive"
+                    checked={formData.isActive}
+                    onChange={handleChange}
+                    className="h-5 w-5 accent-blue-600 cursor-pointer"
+                  />
+                ) : t.isActive ? (
+                  '✅'
+                ) : (
+                  '❌'
+                )}
+              </td>
+
+              {/* isDefault checkbox */}
+              <td className="border p-2 text-center">
+                {editingId === t.id ? (
+                  <input
+                    type="checkbox"
+                    name="isDefault"
+                    checked={formData.isDefault}
+                    onChange={handleChange}
+                    className="h-5 w-5 accent-green-600 cursor-pointer"
+                  />
+                ) : t.isDefault ? (
+                  '⭐'
+                ) : (
+                  '-'
+                )}
+              </td>
+
+              {/* Actions */}
               <td className="border p-2 text-center flex justify-center gap-2">
-                <button
-                  onClick={() => handleEdit(t.id)}
-                  className="text-yellow-600 hover:underline flex items-center gap-1"
-                >
-                  <Edit size={16} /> Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(t.id)}
-                  className="text-red-600 hover:underline flex items-center gap-1"
-                >
-                  <Trash2 size={16} /> Delete
-                </button>
+                {editingId === t.id ? (
+                  <button
+                    onClick={handleSave}
+                    className="text-green-600 hover:underline flex items-center gap-1"
+                  >
+                    💾 Save
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => handleEdit(t.id)}
+                      className="text-yellow-600 hover:underline flex items-center gap-1"
+                    >
+                      <Edit size={16} /> Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(t.id)}
+                      className="text-red-600 hover:underline flex items-center gap-1"
+                    >
+                      <Trash2 size={16} /> Delete
+                    </button>
+                  </>
+                )}
               </td>
             </tr>
           ))}

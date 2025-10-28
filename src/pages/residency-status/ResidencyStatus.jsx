@@ -11,6 +11,8 @@ const ResidencyStatus = () => {
       nationality: 'Pakistan',
       validUntil: '2026-05-18',
       proof: 'residency_ali.pdf',
+      isActive: true,
+      isDefault: false,
     },
     {
       id: 2,
@@ -20,6 +22,8 @@ const ResidencyStatus = () => {
       nationality: 'UAE',
       validUntil: '2025-08-09',
       proof: 'business_ali.pdf',
+      isActive: false,
+      isDefault: true,
     },
     {
       id: 3,
@@ -29,6 +33,8 @@ const ResidencyStatus = () => {
       nationality: 'Canada',
       validUntil: '2026-02-11',
       proof: 'family_sara.pdf',
+      isActive: true,
+      isDefault: false,
     },
   ]);
 
@@ -39,6 +45,8 @@ const ResidencyStatus = () => {
     nationality: '',
     validUntil: '',
     proof: null,
+    isActive: true,
+    isDefault: false,
   });
 
   const [editingStatus, setEditingStatus] = useState(null);
@@ -116,6 +124,8 @@ const ResidencyStatus = () => {
       nationality: '',
       validUntil: '',
       proof: null,
+      isActive: true,
+      isDefault: false,
     });
   };
 
@@ -127,6 +137,8 @@ const ResidencyStatus = () => {
       nationality: status.nationality,
       validUntil: status.validUntil,
       proof: null,
+      isActive: status.isActive,
+      isDefault: status.isDefault,
     });
   };
 
@@ -145,17 +157,19 @@ const ResidencyStatus = () => {
       nationality: '',
       validUntil: '',
       proof: null,
+      isActive: true,
+      isDefault: false,
     });
   };
 
   return (
-    <div className="p-6 bg-white rounded-2xl shadow-md max-w-5xl mx-auto mt-6">
+    <div className="p-6 bg-white rounded-2xl shadow-md max-w-6xl mx-auto mt-6">
       <h2 className="text-2xl font-semibold mb-4 text-center text-blue-700">
         🪪 Residency Status Management
       </h2>
 
       {/* ➕ Add / Edit Residency */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
         <select
           className="border p-2 rounded"
           value={newStatus.employeeId}
@@ -203,7 +217,7 @@ const ResidencyStatus = () => {
           onChange={(e) =>
             setNewStatus({ ...newStatus, validUntil: e.target.value })
           }
-          className="border p-2 rounded col-span-1 sm:col-span-2 md:col-span-1"
+          className="border p-2 rounded"
         />
 
         <input
@@ -211,8 +225,32 @@ const ResidencyStatus = () => {
           onChange={(e) =>
             setNewStatus({ ...newStatus, proof: e.target.files[0] })
           }
-          className="border p-2 rounded col-span-1 sm:col-span-2 md:col-span-1"
+          className="border p-2 rounded"
         />
+
+        <label className="flex items-center gap-2 mt-2">
+          <input
+            type="checkbox"
+            checked={newStatus.isActive}
+            onChange={(e) =>
+              setNewStatus({ ...newStatus, isActive: e.target.checked })
+            }
+            className="h-5 w-5 accent-green-600"
+          />
+          Active
+        </label>
+
+        <label className="flex items-center gap-2 mt-2">
+          <input
+            type="checkbox"
+            checked={newStatus.isDefault}
+            onChange={(e) =>
+              setNewStatus({ ...newStatus, isDefault: e.target.checked })
+            }
+            className="h-5 w-5 accent-blue-600"
+          />
+          Default
+        </label>
       </div>
 
       <div className="flex justify-end gap-2 mb-6">
@@ -240,6 +278,8 @@ const ResidencyStatus = () => {
             <th className="border p-3">Visa Type</th>
             <th className="border p-3">Nationality</th>
             <th className="border p-3">Valid Until</th>
+            <th className="border p-3 text-center">Active</th>
+            <th className="border p-3 text-center">Default</th>
             <th className="border p-3 text-center">Proof</th>
             <th className="border p-3 text-center">Actions</th>
           </tr>
@@ -251,6 +291,12 @@ const ResidencyStatus = () => {
               <td className="border p-3">{s.visaType}</td>
               <td className="border p-3">{s.nationality}</td>
               <td className="border p-3">{s.validUntil}</td>
+              <td className="border p-3 text-center">
+                {s.isActive ? '✅' : '❌'}
+              </td>
+              <td className="border p-3 text-center">
+                {s.isDefault ? '⭐' : '-'}
+              </td>
               <td className="border p-3 text-center">
                 {s.proof !== 'N/A' ? (
                   <div className="space-x-2">

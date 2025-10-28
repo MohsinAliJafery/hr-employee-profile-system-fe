@@ -3,17 +3,45 @@ import React, { useState } from 'react';
 const DepartmentList = () => {
   // 🧠 Dummy Data
   const [departments, setDepartments] = useState([
-    { id: 1, name: 'IT', employees: ['Ali Khan', 'Sara Ahmed', 'Fatima Tariq'] },
-    { id: 2, name: 'HR', employees: ['Bilal Hussain'] },
-    { id: 3, name: 'Finance', employees: ['Ayesha Noor', 'Hamza Iqbal'] },
-    { id: 4, name: 'Marketing', employees: ['Zara Shah'] },
-    { id: 5, name: 'Sales', employees: ['Usman Raza', 'Tariq Javed'] },
-    { id: 6, name: 'Support', employees: ['Kashif Ali'] },
-    { id: 7, name: 'Procurement', employees: ['Anila Qureshi'] },
-    { id: 8, name: 'Operations', employees: ['Zeeshan Malik'] },
+    {
+      id: 1,
+      name: 'IT',
+      employees: ['Ali Khan', 'Sara Ahmed'],
+      status: 1,
+      isDefault: true,
+    },
+    {
+      id: 2,
+      name: 'HR',
+      employees: ['Bilal Hussain'],
+      status: 1,
+      isDefault: false,
+    },
+    {
+      id: 3,
+      name: 'Finance',
+      employees: ['Ayesha Noor'],
+      status: 0,
+      isDefault: false,
+    },
+    {
+      id: 4,
+      name: 'Marketing',
+      employees: ['Zara Shah'],
+      status: 1,
+      isDefault: false,
+    },
+    {
+      id: 5,
+      name: 'Support',
+      employees: ['Kashif Ali'],
+      status: 0,
+      isDefault: false,
+    },
   ]);
 
   const [newDept, setNewDept] = useState('');
+  const [newDefault, setNewDefault] = useState(false);
   const [editingDept, setEditingDept] = useState(null);
   const [showEmployees, setShowEmployees] = useState(null);
 
@@ -41,29 +69,60 @@ const DepartmentList = () => {
       alert('⚠️ Department already exists!');
       return;
     }
+
+    // if default selected, make others false
+    const updatedDepartments = newDefault
+      ? departments.map((d) => ({ ...d, isDefault: false }))
+      : departments;
+
     setDepartments([
-      ...departments,
-      { id: Date.now(), name: newDept, employees: [] },
+      ...updatedDepartments,
+      {
+        id: Date.now(),
+        name: newDept,
+        employees: [],
+        status: 1,
+        isDefault: newDefault,
+      },
     ]);
     setNewDept('');
+    setNewDefault(false);
   };
 
   // ✏️ Edit Department
-  const handleEditDepartment = (id, name) => {
-    setEditingDept({ id, name });
+  const handleEditDepartment = (dept) => {
+    setEditingDept({ ...dept });
   };
 
   const handleSaveEdit = () => {
-    setDepartments((prev) =>
-      prev.map((d) =>
-        d.id === editingDept.id ? { ...d, name: editingDept.name } : d
-      )
-    );
+    // if editing marked as default, make others false
+    let updatedDepartments = departments;
+    if (editingDept.isDefault) {
+      updatedDepartments = departments.map((d) =>
+        d.id === editingDept.id
+          ? { ...editingDept }
+          : { ...d, isDefault: false }
+      );
+    } else {
+      updatedDepartments = departments.map((d) =>
+        d.id === editingDept.id ? editingDept : d
+      );
+    }
+    setDepartments(updatedDepartments);
     setEditingDept(null);
   };
 
   const handleCancelEdit = () => {
     setEditingDept(null);
+  };
+
+  // 🔁 Toggle Status
+  const toggleStatus = (id) => {
+    setDepartments((prev) =>
+      prev.map((d) =>
+        d.id === id ? { ...d, status: d.status === 1 ? 0 : 1 } : d
+      )
+    );
   };
 
   // ❌ Delete Department
@@ -74,20 +133,28 @@ const DepartmentList = () => {
   };
 
   return (
-    <div className="p-6 bg-white rounded-2xl shadow-md max-w-4xl mx-auto mt-6">
+    <div className="p-6 bg-white rounded-2xl shadow-md max-w-6xl mx-auto mt-6">
       <h2 className="text-2xl font-semibold mb-4 text-center text-blue-700">
         🏢 Department Management
       </h2>
 
       {/* ➕ Add New Department */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-col sm:flex-row gap-3 mb-6 items-center">
         <input
           type="text"
           placeholder="Enter department name"
           value={newDept}
           onChange={(e) => setNewDept(e.target.value)}
-          className="border p-2 rounded w-full"
+          className="border p-2 rounded w-full sm:w-1/2"
         />
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={newDefault}
+            onChange={() => setNewDefault(!newDefault)}
+          />
+          <span>Set as Default</span>
+        </label>
         <button
           onClick={handleAddDepartment}
           className="bg-blue-600 text-white px-4 py-2 rounded"
@@ -102,6 +169,8 @@ const DepartmentList = () => {
           <tr className="bg-blue-100 text-blue-900">
             <th className="border p-3 text-left">Department</th>
             <th className="border p-3 text-center">Employees</th>
+            <th className="border p-3 text-center">Status</th>
+            <th className="border p-3 text-center">Is Default</th>
             <th className="border p-3 text-center">Actions</th>
           </tr>
         </thead>
@@ -127,9 +196,40 @@ const DepartmentList = () => {
                     dept.name
                   )}
                 </td>
+
                 <td className="border p-3 text-center">
                   {dept.employees.length}
                 </td>
+
+                <td className="border p-3 text-center">
+                  <span
+                    className={`px-3 py-1 rounded text-white text-sm ${
+                      dept.status === 1 ? 'bg-green-500' : 'bg-red-500'
+                    }`}
+                  >
+                    {dept.status === 1 ? 'Active' : 'In-Active'}
+                  </span>
+                </td>
+
+                <td className="border p-3 text-center">
+                  {editingDept?.id === dept.id ? (
+                    <input
+                      type="checkbox"
+                      checked={editingDept.isDefault}
+                      onChange={() =>
+                        setEditingDept({
+                          ...editingDept,
+                          isDefault: !editingDept.isDefault,
+                        })
+                      }
+                    />
+                  ) : dept.isDefault ? (
+                    <span className="text-green-600 font-semibold">Yes</span>
+                  ) : (
+                    <span className="text-gray-500">No</span>
+                  )}
+                </td>
+
                 <td className="border p-3 text-center space-x-2">
                   {editingDept?.id === dept.id ? (
                     <>
@@ -159,10 +259,20 @@ const DepartmentList = () => {
                         {showEmployees === dept.id ? 'Hide' : 'View'}
                       </button>
                       <button
-                        onClick={() => handleEditDepartment(dept.id, dept.name)}
+                        onClick={() => handleEditDepartment(dept)}
                         className="bg-yellow-500 text-white px-3 py-1 rounded"
                       >
                         Edit
+                      </button>
+                      <button
+                        onClick={() => toggleStatus(dept.id)}
+                        className={`${
+                          dept.status === 1
+                            ? 'bg-gray-500 hover:bg-gray-600'
+                            : 'bg-green-600 hover:bg-green-700'
+                        } text-white px-3 py-1 rounded`}
+                      >
+                        {dept.status === 1 ? 'Deactivate' : 'Activate'}
                       </button>
                       <button
                         onClick={() => handleDelete(dept.id)}
@@ -178,7 +288,7 @@ const DepartmentList = () => {
               {/* 👥 Employee List (View) */}
               {showEmployees === dept.id && (
                 <tr>
-                  <td colSpan="3" className="border p-3 bg-gray-50">
+                  <td colSpan="5" className="border p-3 bg-gray-50">
                     <h4 className="font-semibold mb-2">
                       Employees in {dept.name}
                     </h4>

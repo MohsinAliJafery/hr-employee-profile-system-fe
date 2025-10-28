@@ -8,63 +8,122 @@ const DesignationList = () => {
   );
 
   const [designations, setDesignations] = useState([
-    { id: 1, department: 'IT', title: 'Frontend Developer', employees: 5 },
-    { id: 2, department: 'IT', title: 'Backend Developer', employees: 3 },
-    { id: 3, department: 'HR', title: 'Recruiter', employees: 2 },
-    { id: 4, department: 'Finance', title: 'Accountant', employees: 4 },
-    { id: 5, department: 'Marketing', title: 'SEO Specialist', employees: 1 },
-    { id: 6, department: 'Operations', title: 'Supervisor', employees: 2 },
+    {
+      id: 1,
+      department: 'IT',
+      title: 'Frontend Developer',
+      employees: 5,
+      isActive: true,
+      isDefault: false,
+    },
+    {
+      id: 2,
+      department: 'IT',
+      title: 'Backend Developer',
+      employees: 3,
+      isActive: true,
+      isDefault: false,
+    },
+    {
+      id: 3,
+      department: 'HR',
+      title: 'Recruiter',
+      employees: 2,
+      isActive: false,
+      isDefault: false,
+    },
+    {
+      id: 4,
+      department: 'Finance',
+      title: 'Accountant',
+      employees: 4,
+      isActive: true,
+      isDefault: true,
+    },
   ]);
 
   const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({ department: '', title: '' });
+  const [formData, setFormData] = useState({
+    department: '',
+    title: '',
+    isActive: false,
+    isDefault: false,
+  });
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 4;
 
-  // Pagination logic
   const totalPages = Math.ceil(designations.length / pageSize);
   const paginatedData = designations.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, type, value, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value,
+    });
+  };
 
   const handleAdd = () => {
     if (!formData.department || !formData.title)
-      return alert('Fill all fields!');
+      return alert('Please fill all fields!');
     const newDesignation = {
       id: Date.now(),
       department: formData.department,
       title: formData.title,
       employees: 0,
+      isActive: formData.isActive,
+      isDefault: formData.isDefault,
     };
     setDesignations([...designations, newDesignation]);
-    setFormData({ department: '', title: '' });
+    setFormData({
+      department: '',
+      title: '',
+      isActive: false,
+      isDefault: false,
+    });
   };
 
   const handleEdit = (id) => {
     const desig = designations.find((d) => d.id === id);
     setEditingId(id);
-    setFormData({ department: desig.department, title: desig.title });
+    setFormData({
+      department: desig.department,
+      title: desig.title,
+      isActive: desig.isActive,
+      isDefault: desig.isDefault,
+    });
   };
 
   const handleSave = () => {
     setDesignations((prev) =>
       prev.map((d) =>
         d.id === editingId
-          ? { ...d, department: formData.department, title: formData.title }
+          ? {
+              ...d,
+              department: formData.department,
+              title: formData.title,
+              isActive: formData.isActive,
+              isDefault: formData.isDefault,
+            }
           : d
       )
     );
     setEditingId(null);
-    setFormData({ department: '', title: '' });
+    setFormData({
+      department: '',
+      title: '',
+      isActive: false,
+      isDefault: false,
+    });
   };
 
   const handleDelete = (id) => {
-    if (window.confirm('Are you sure?'))
+    if (window.confirm('Are you sure you want to delete this designation?')) {
       setDesignations(designations.filter((d) => d.id !== id));
+    }
   };
 
   return (
@@ -72,12 +131,12 @@ const DesignationList = () => {
       <h2 className="text-2xl font-semibold mb-4">🏷️ Designation Management</h2>
 
       {/* Add or Edit Section */}
-      <div className="flex items-center gap-2 mb-4">
+      <div className="flex items-center gap-3 mb-4 flex-wrap">
         <select
           name="department"
           value={formData.department}
           onChange={handleChange}
-          className="border p-2 rounded w-1/4"
+          className="border p-2 rounded w-1/5"
         >
           <option value="">Select Department</option>
           {departments.map((dep) => (
@@ -92,8 +151,30 @@ const DesignationList = () => {
           value={formData.title}
           onChange={handleChange}
           placeholder="Designation Title"
-          className="border p-2 rounded w-1/4"
+          className="border p-2 rounded w-1/5"
         />
+
+        <label className="flex items-center gap-1">
+          <input
+            type="checkbox"
+            name="isActive"
+            checked={formData.isActive}
+            onChange={handleChange}
+            className="h-5 w-5 accent-blue-600 cursor-pointer"
+          />
+          Active
+        </label>
+
+        <label className="flex items-center gap-1">
+          <input
+            type="checkbox"
+            name="isDefault"
+            checked={formData.isDefault}
+            onChange={handleChange}
+            className="h-5 w-5 accent-green-600 cursor-pointer"
+          />
+          Default
+        </label>
 
         {editingId ? (
           <button
@@ -119,6 +200,8 @@ const DesignationList = () => {
             <th className="border p-2">#</th>
             <th className="border p-2">Department</th>
             <th className="border p-2">Designation</th>
+            <th className="border p-2 text-center">Active</th>
+            <th className="border p-2 text-center">Default</th>
             <th className="border p-2">Employees</th>
             <th className="border p-2 text-center">Actions</th>
           </tr>
@@ -131,7 +214,43 @@ const DesignationList = () => {
               </td>
               <td className="border p-2">{desig.department}</td>
               <td className="border p-2">{desig.title}</td>
+
+              {/* Active Checkbox */}
+              <td className="border p-2 text-center">
+                {editingId === desig.id ? (
+                  <input
+                    type="checkbox"
+                    name="isActive"
+                    checked={formData.isActive}
+                    onChange={handleChange}
+                    className="h-5 w-5 accent-blue-600 cursor-pointer"
+                  />
+                ) : desig.isActive ? (
+                  '✅'
+                ) : (
+                  '❌'
+                )}
+              </td>
+
+              {/* Default Checkbox */}
+              <td className="border p-2 text-center">
+                {editingId === desig.id ? (
+                  <input
+                    type="checkbox"
+                    name="isDefault"
+                    checked={formData.isDefault}
+                    onChange={handleChange}
+                    className="h-5 w-5 accent-green-600 cursor-pointer"
+                  />
+                ) : desig.isDefault ? (
+                  '⭐'
+                ) : (
+                  '-'
+                )}
+              </td>
+
               <td className="border p-2">{desig.employees}</td>
+
               <td className="border p-2 text-center flex justify-center gap-2">
                 <button
                   onClick={() => alert(`Viewing employees for ${desig.title}`)}

@@ -16,18 +16,42 @@ const CityList = () => {
       name: 'Riyadh',
       countryId: 1,
       employees: ['Ali Khan', 'Fatima Tariq'],
+      isActive: true,
+      isDefault: false,
     },
-    { id: 2, name: 'Karachi', countryId: 2, employees: ['Sara Ahmed'] },
+    {
+      id: 2,
+      name: 'Karachi',
+      countryId: 2,
+      employees: ['Sara Ahmed'],
+      isActive: true,
+      isDefault: true,
+    },
     {
       id: 3,
       name: 'Dubai',
       countryId: 3,
       employees: ['Bilal Hussain', 'Zara Shah'],
+      isActive: false,
+      isDefault: false,
     },
-    { id: 4, name: 'Doha', countryId: 4, employees: [] },
+    {
+      id: 4,
+      name: 'Doha',
+      countryId: 4,
+      employees: [],
+      isActive: true,
+      isDefault: false,
+    },
   ]);
 
-  const [newCity, setNewCity] = useState({ name: '', countryId: '' });
+  const [newCity, setNewCity] = useState({
+    name: '',
+    countryId: '',
+    isActive: true,
+    isDefault: false,
+  });
+
   const [editingCity, setEditingCity] = useState(null);
   const [showEmployees, setShowEmployees] = useState(null);
 
@@ -52,6 +76,7 @@ const CityList = () => {
       alert('⚠️ City already exists!');
       return;
     }
+
     setCities([
       ...cities,
       {
@@ -59,9 +84,11 @@ const CityList = () => {
         name: newCity.name,
         countryId: Number(newCity.countryId),
         employees: [],
+        isActive: newCity.isActive,
+        isDefault: newCity.isDefault,
       },
     ]);
-    setNewCity({ name: '', countryId: '' });
+    setNewCity({ name: '', countryId: '', isActive: true, isDefault: false });
   };
 
   // ✏️ Edit City
@@ -71,7 +98,12 @@ const CityList = () => {
     setCities((prev) =>
       prev.map((c) =>
         c.id === editingCity.id
-          ? { ...editingCity, countryId: Number(editingCity.countryId) }
+          ? {
+              ...editingCity,
+              countryId: Number(editingCity.countryId),
+              isActive: Boolean(editingCity.isActive),
+              isDefault: Boolean(editingCity.isDefault),
+            }
           : c
       )
     );
@@ -92,13 +124,13 @@ const CityList = () => {
     countries.find((c) => c.id === id)?.name || 'N/A';
 
   return (
-    <div className="p-6 bg-white rounded-2xl shadow-md max-w-4xl mx-auto mt-6">
+    <div className="p-6 bg-white rounded-2xl shadow-md max-w-5xl mx-auto mt-6">
       <h2 className="text-2xl font-semibold mb-4 text-center text-blue-700">
         🏙️ City Management
       </h2>
 
       {/* ➕ Add City */}
-      <div className="grid grid-cols-3 gap-2 mb-6">
+      <div className="grid grid-cols-5 gap-2 mb-6">
         <input
           type="text"
           placeholder="Enter city name"
@@ -120,6 +152,33 @@ const CityList = () => {
             </option>
           ))}
         </select>
+
+        {/* isActive */}
+        <label className="flex items-center gap-2 justify-center">
+          <input
+            type="checkbox"
+            checked={newCity.isActive}
+            onChange={(e) =>
+              setNewCity({ ...newCity, isActive: e.target.checked })
+            }
+            className="h-5 w-5 accent-green-600 cursor-pointer"
+          />
+          Active
+        </label>
+
+        {/* isDefault */}
+        <label className="flex items-center gap-2 justify-center">
+          <input
+            type="checkbox"
+            checked={newCity.isDefault}
+            onChange={(e) =>
+              setNewCity({ ...newCity, isDefault: e.target.checked })
+            }
+            className="h-5 w-5 accent-blue-600 cursor-pointer"
+          />
+          Default
+        </label>
+
         <button
           onClick={handleAddCity}
           className="bg-blue-600 text-white px-4 py-2 rounded"
@@ -134,6 +193,8 @@ const CityList = () => {
           <tr className="bg-blue-100 text-blue-900">
             <th className="border p-3 text-left">City</th>
             <th className="border p-3 text-left">Country</th>
+            <th className="border p-3 text-center">Active</th>
+            <th className="border p-3 text-center">Default</th>
             <th className="border p-3 text-center">Employees</th>
             <th className="border p-3 text-center">Actions</th>
           </tr>
@@ -146,6 +207,7 @@ const CityList = () => {
                   showEmployees === city.id ? 'bg-blue-50' : ''
                 }`}
               >
+                {/* City Name */}
                 <td className="border p-3">
                   {editingCity?.id === city.id ? (
                     <input
@@ -160,6 +222,8 @@ const CityList = () => {
                     city.name
                   )}
                 </td>
+
+                {/* Country */}
                 <td className="border p-3">
                   {editingCity?.id === city.id ? (
                     <select
@@ -183,9 +247,55 @@ const CityList = () => {
                     getCountryName(city.countryId)
                   )}
                 </td>
+
+                {/* isActive */}
+                <td className="border p-3 text-center">
+                  {editingCity?.id === city.id ? (
+                    <input
+                      type="checkbox"
+                      checked={Boolean(editingCity.isActive)}
+                      onChange={(e) =>
+                        setEditingCity({
+                          ...editingCity,
+                          isActive: e.target.checked,
+                        })
+                      }
+                      className="h-5 w-5 accent-green-600 cursor-pointer"
+                    />
+                  ) : city.isActive ? (
+                    'Active'
+                  ) : (
+                    'In-Active'
+                  )}
+                </td>
+
+                {/* isDefault */}
+                <td className="border p-3 text-center">
+                  {editingCity?.id === city.id ? (
+                    <input
+                      type="checkbox"
+                      checked={Boolean(editingCity.isDefault)}
+                      onChange={(e) =>
+                        setEditingCity({
+                          ...editingCity,
+                          isDefault: e.target.checked,
+                        })
+                      }
+                      className="h-5 w-5 accent-blue-600 cursor-pointer"
+                    />
+                  ) : city.isDefault ? (
+                    'Yes'
+                  ) : (
+                    'No'
+                  )}
+                </td>
+
+                {/* Employees Count */}
                 <td className="border p-3 text-center">
                   {city.employees.length}
                 </td>
+
+                {/* Actions */}
                 <td className="border p-3 text-center space-x-2">
                   {editingCity?.id === city.id ? (
                     <>
@@ -234,7 +344,7 @@ const CityList = () => {
               {/* 👥 Employees Under City */}
               {showEmployees === city.id && (
                 <tr>
-                  <td colSpan="4" className="border p-3 bg-gray-50">
+                  <td colSpan="6" className="border p-3 bg-gray-50">
                     <h4 className="font-semibold mb-2">
                       Employees in {city.name}
                     </h4>

@@ -2,14 +2,35 @@ import React, { useState } from 'react';
 
 const VisaTypeList = () => {
   const [visaTypes, setVisaTypes] = useState([
-    { id: 1, type: 'Employment Visa', employees: ['Ali Khan', 'Sara Ahmed'] },
-    { id: 2, type: 'Business Visa', employees: ['Bilal Hussain'] },
-    { id: 3, type: 'Visit Visa', employees: ['Zara Shah', 'Ayesha Noor'] },
-    { id: 4, type: 'Student Visa', employees: [] },
-    { id: 5, type: 'Family Visa', employees: ['Hamza Iqbal'] },
+    {
+      id: 1,
+      type: 'Employment Visa',
+      employees: ['Ali Khan', 'Sara Ahmed'],
+      active: 1,
+      isDefault: 0,
+    },
+    {
+      id: 2,
+      type: 'Business Visa',
+      employees: ['Bilal Hussain'],
+      active: 1,
+      isDefault: 1,
+    },
+    {
+      id: 3,
+      type: 'Visit Visa',
+      employees: ['Zara Shah', 'Ayesha Noor'],
+      active: 0,
+      isDefault: 0,
+    },
   ]);
 
-  const [newType, setNewType] = useState('');
+  const [newType, setNewType] = useState({
+    type: '',
+    active: 1,
+    isDefault: 0,
+  });
+
   const [editingType, setEditingType] = useState(null);
   const [showEmployees, setShowEmployees] = useState(null);
 
@@ -24,31 +45,37 @@ const VisaTypeList = () => {
 
   // Add Visa Type
   const handleAddType = () => {
-    if (!newType.trim()) return alert('Please enter visa type name.');
+    if (!newType.type.trim()) return alert('Please enter visa type name.');
     const exists = visaTypes.find(
-      (v) => v.type.toLowerCase() === newType.toLowerCase()
+      (v) => v.type.toLowerCase() === newType.type.toLowerCase()
     );
     if (exists) {
       alert('⚠️ Visa Type already exists!');
       return;
     }
+
     setVisaTypes([
       ...visaTypes,
-      { id: Date.now(), type: newType, employees: [] },
+      {
+        id: Date.now(),
+        type: newType.type,
+        employees: [],
+        active: newType.active,
+        isDefault: newType.isDefault,
+      },
     ]);
-    setNewType('');
+
+    setNewType({ type: '', active: 1, isDefault: 0 });
   };
 
   // Edit Visa Type
-  const handleEdit = (id, type) => {
-    setEditingType({ id, type });
+  const handleEdit = (visa) => {
+    setEditingType({ ...visa });
   };
 
   const handleSaveEdit = () => {
     setVisaTypes((prev) =>
-      prev.map((v) =>
-        v.id === editingType.id ? { ...v, type: editingType.type } : v
-      )
+      prev.map((v) => (v.id === editingType.id ? editingType : v))
     );
     setEditingType(null);
   };
@@ -65,20 +92,45 @@ const VisaTypeList = () => {
   };
 
   return (
-    <div className="p-6 bg-white rounded-2xl shadow-md max-w-3xl mx-auto mt-6">
+    <div className="p-6 bg-white rounded-2xl shadow-md max-w-4xl mx-auto mt-6">
       <h2 className="text-2xl font-semibold mb-4 text-center text-blue-700">
         🛂 Visa Type Management
       </h2>
 
       {/* ➕ Add New Visa Type */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 items-center">
         <input
           type="text"
           placeholder="Enter visa type name"
-          value={newType}
-          onChange={(e) => setNewType(e.target.value)}
+          value={newType.type}
+          onChange={(e) => setNewType({ ...newType, type: e.target.value })}
           className="border p-2 rounded w-full"
         />
+
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            className="h-5 w-5 accent-blue-600 cursor-pointer"
+            checked={newType.active === 1}
+            onChange={(e) =>
+              setNewType({ ...newType, active: e.target.checked ? 1 : 0 })
+            }
+          />
+          Active
+        </label>
+
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            className="h-5 w-5 accent-blue-600 cursor-pointer"
+            checked={newType.isDefault === 1}
+            onChange={(e) =>
+              setNewType({ ...newType, isDefault: e.target.checked ? 1 : 0 })
+            }
+          />
+          Default
+        </label>
+
         <button
           onClick={handleAddType}
           className="bg-blue-600 text-white px-4 py-2 rounded"
@@ -93,6 +145,8 @@ const VisaTypeList = () => {
           <tr className="bg-blue-100 text-blue-900">
             <th className="border p-3 text-left">Visa Type</th>
             <th className="border p-3 text-center">Employees</th>
+            <th className="border p-3 text-center">Active</th>
+            <th className="border p-3 text-center">Default</th>
             <th className="border p-3 text-center">Actions</th>
           </tr>
         </thead>
@@ -118,9 +172,51 @@ const VisaTypeList = () => {
                     visa.type
                   )}
                 </td>
+
                 <td className="border p-3 text-center">
                   {visa.employees.length}
                 </td>
+
+                <td className="border p-3 text-center">
+                  {editingType?.id === visa.id ? (
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 accent-blue-600 cursor-pointer"
+                      checked={editingType.active === 1}
+                      onChange={(e) =>
+                        setEditingType({
+                          ...editingType,
+                          active: e.target.checked ? 1 : 0,
+                        })
+                      }
+                    />
+                  ) : visa.active === 1 ? (
+                    'Active'
+                  ) : (
+                    'Inactive'
+                  )}
+                </td>
+
+                <td className="border p-3 text-center">
+                  {editingType?.id === visa.id ? (
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 accent-blue-600 cursor-pointer"
+                      checked={editingType.isDefault === 1}
+                      onChange={(e) =>
+                        setEditingType({
+                          ...editingType,
+                          isDefault: e.target.checked ? 1 : 0,
+                        })
+                      }
+                    />
+                  ) : visa.isDefault === 1 ? (
+                    'Yes'
+                  ) : (
+                    'No'
+                  )}
+                </td>
+
                 <td className="border p-3 text-center space-x-2">
                   {editingType?.id === visa.id ? (
                     <>
@@ -150,7 +246,7 @@ const VisaTypeList = () => {
                         View
                       </button>
                       <button
-                        onClick={() => handleEdit(visa.id, visa.type)}
+                        onClick={() => handleEdit(visa)}
                         className="bg-yellow-500 text-white px-3 py-1 rounded"
                       >
                         Edit
@@ -169,7 +265,7 @@ const VisaTypeList = () => {
               {/* 👥 Employees Under Visa Type */}
               {showEmployees === visa.id && (
                 <tr>
-                  <td colSpan="3" className="border p-3 bg-gray-50">
+                  <td colSpan="5" className="border p-3 bg-gray-50">
                     <h4 className="font-semibold mb-2">
                       Employees under {visa.type}
                     </h4>

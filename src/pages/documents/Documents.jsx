@@ -22,6 +22,8 @@ const DocumentsList = () => {
       file: 'passport_ali.pdf',
       fileUrl:
         'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+      isActive: true,
+      isDefault: true,
     },
     {
       id: 2,
@@ -31,6 +33,8 @@ const DocumentsList = () => {
       file: 'cnic_sara.pdf',
       fileUrl:
         'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+      isActive: false,
+      isDefault: false,
     },
     {
       id: 3,
@@ -40,12 +44,16 @@ const DocumentsList = () => {
       file: 'degree_bilal.pdf',
       fileUrl:
         'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+      isActive: true,
+      isDefault: false,
     },
   ]);
 
   const [selectedEmployee, setSelectedEmployee] = useState('');
   const [docType, setDocType] = useState('');
   const [file, setFile] = useState(null);
+  const [isActive, setIsActive] = useState(true);
+  const [isDefault, setIsDefault] = useState(false);
   const [editingDoc, setEditingDoc] = useState(null);
   const [previewDoc, setPreviewDoc] = useState(null);
 
@@ -74,7 +82,16 @@ const DocumentsList = () => {
       alert('⚠️ Please select employee, document type, and file.');
       return;
     }
+
     const employee = employees.find((e) => e.id === parseInt(selectedEmployee));
+
+    // ensure only one default per employee
+    let updatedDocs = [...documents];
+    if (isDefault) {
+      updatedDocs = updatedDocs.map((d) =>
+        d.employeeId === employee.id ? { ...d, isDefault: false } : d
+      );
+    }
 
     const newDoc = {
       id: Date.now(),
@@ -83,14 +100,18 @@ const DocumentsList = () => {
       type: docType,
       file: file.name,
       fileUrl: URL.createObjectURL(file),
+      isActive,
+      isDefault,
     };
 
-    setDocuments([...documents, newDoc]);
+    setDocuments([...updatedDocs, newDoc]);
     setDocType('');
     setFile(null);
+    setIsActive(true);
+    setIsDefault(false);
   };
 
-  // ✏️ Edit Document
+  // ✏️ Save Edited Document
   const handleSaveEdit = () => {
     setDocuments((prev) =>
       prev.map((d) =>
@@ -101,7 +122,11 @@ const DocumentsList = () => {
               file: editingDoc.file.name || editingDoc.file,
               fileUrl:
                 editingDoc.fileUrl || URL.createObjectURL(editingDoc.file),
+              isActive: editingDoc.isActive,
+              isDefault: editingDoc.isDefault,
             }
+          : d.employeeId === editingDoc.employeeId && editingDoc.isDefault
+          ? { ...d, isDefault: false } // only one default per employee
           : d
       )
     );
@@ -124,13 +149,13 @@ const DocumentsList = () => {
   };
 
   return (
-    <div className="p-6 bg-white rounded-2xl shadow-md max-w-5xl mx-auto mt-6">
+    <div className="p-6 bg-white rounded-2xl shadow-md max-w-6xl mx-auto mt-6">
       <h2 className="text-2xl font-semibold mb-4 text-center text-blue-700">
         📂 Employee Documents
       </h2>
 
-      {/* 🔍 Search Section */}
-      <div className="flex flex-wrap gap-3 mb-6">
+      {/* 🔍 Search & Add Section */}
+      <div className="flex flex-wrap gap-3 mb-6 items-center">
         <select
           className="border p-2 rounded flex-1 min-w-[200px]"
           value={selectedEmployee}
@@ -150,11 +175,11 @@ const DocumentsList = () => {
           onChange={(e) => setDocType(e.target.value)}
         >
           <option value="">Select Document Type</option>
-          <option value="Passport">Passport</option>
-          <option value="CNIC">CNIC</option>
-          <option value="Visa">Visa</option>
-          <option value="Degree">Degree</option>
-          <option value="Contract">Contract</option>
+          <option>Passport</option>
+          <option>CNIC</option>
+          <option>Visa</option>
+          <option>Degree</option>
+          <option>Contract</option>
         </select>
 
         <input
@@ -162,6 +187,24 @@ const DocumentsList = () => {
           onChange={(e) => setFile(e.target.files[0])}
           className="border p-2 rounded flex-1 min-w-[200px]"
         />
+
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={isActive}
+            onChange={(e) => setIsActive(e.target.checked)}
+          />
+          Active
+        </label>
+
+        <label className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            checked={isDefault}
+            onChange={(e) => setIsDefault(e.target.checked)}
+          />
+          Default
+        </label>
 
         <button
           onClick={handleUpload}
@@ -178,6 +221,8 @@ const DocumentsList = () => {
             <th className="border p-3 text-left">Employee</th>
             <th className="border p-3 text-left">Type</th>
             <th className="border p-3 text-left">File</th>
+            <th className="border p-3 text-center">Active</th>
+            <th className="border p-3 text-center">Default</th>
             <th className="border p-3 text-center">Actions</th>
           </tr>
         </thead>
@@ -205,7 +250,7 @@ const DocumentsList = () => {
                     doc.type
                   )}
                 </td>
-                <td className="border p-3 text-blue-700 underline cursor-pointer">
+                <td className="border p-3">
                   {editingDoc?.id === doc.id ? (
                     <input
                       type="file"
@@ -217,9 +262,53 @@ const DocumentsList = () => {
                       }
                     />
                   ) : (
-                    doc.file
+                    <span
+                      className="text-blue-700 underline cursor-pointer"
+                      onClick={() => setPreviewDoc(doc)}
+                    >
+                      {doc.file}
+                    </span>
                   )}
                 </td>
+
+                <td className="border p-3 text-center">
+                  {editingDoc?.id === doc.id ? (
+                    <input
+                      type="checkbox"
+                      checked={editingDoc.isActive}
+                      onChange={(e) =>
+                        setEditingDoc({
+                          ...editingDoc,
+                          isActive: e.target.checked,
+                        })
+                      }
+                    />
+                  ) : doc.isActive ? (
+                    '✅'
+                  ) : (
+                    '❌'
+                  )}
+                </td>
+
+                <td className="border p-3 text-center">
+                  {editingDoc?.id === doc.id ? (
+                    <input
+                      type="checkbox"
+                      checked={editingDoc.isDefault}
+                      onChange={(e) =>
+                        setEditingDoc({
+                          ...editingDoc,
+                          isDefault: e.target.checked,
+                        })
+                      }
+                    />
+                  ) : doc.isDefault ? (
+                    '⭐'
+                  ) : (
+                    '-'
+                  )}
+                </td>
+
                 <td className="border p-3 text-center space-x-2">
                   {editingDoc?.id === doc.id ? (
                     <>
@@ -238,12 +327,6 @@ const DocumentsList = () => {
                     </>
                   ) : (
                     <>
-                      <button
-                        onClick={() => setPreviewDoc(doc)}
-                        className="bg-blue-500 text-white px-3 py-1 rounded"
-                      >
-                        View
-                      </button>
                       <button
                         onClick={() => handleDownload(doc.fileUrl, doc.file)}
                         className="bg-indigo-500 text-white px-3 py-1 rounded"
@@ -269,44 +352,13 @@ const DocumentsList = () => {
             ))
           ) : (
             <tr>
-              <td colSpan="4" className="border p-3 text-center text-gray-500">
+              <td colSpan="6" className="border p-3 text-center text-gray-500">
                 No documents found.
               </td>
             </tr>
           )}
         </tbody>
       </table>
-
-      {/* 🔢 Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-center mt-4 space-x-2">
-          <button
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(currentPage - 1)}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Prev
-          </button>
-          {[...Array(totalPages)].map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentPage(i + 1)}
-              className={`px-3 py-1 border rounded ${
-                currentPage === i + 1 ? 'bg-blue-600 text-white' : ''
-              }`}
-            >
-              {i + 1}
-            </button>
-          ))}
-          <button
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage(currentPage + 1)}
-            className="px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      )}
 
       {/* 👁️ Preview Modal */}
       {previewDoc && (
