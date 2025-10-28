@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 const Layout = () => {
   
   const navigate = useNavigate();
-  const user = getCurrentUser();
+  // const user = getCurrentUser();
 
   useEffect(() => {
     if (!isAuthenticated()) {
