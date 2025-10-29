@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import authAPI from '../../services/auth';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { ArrowLeft } from 'lucide-react';
 
 const Signup = ({ onSignupSuccess }) => {
   const [errors, setErrors] = useState([]);
@@ -19,8 +20,11 @@ const Signup = ({ onSignupSuccess }) => {
     website: '',
     address: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    companyLegalStatus: '',
+    companyType: ''  
   });
+
 
   const navigate = useNavigate();
 
@@ -106,12 +110,26 @@ const Signup = ({ onSignupSuccess }) => {
   };
 
   return (
-    <div className="flex py-[70px]">
-      <div className="w-3/5 mx-auto bg-white rounded-xl shadow-lg overflow-hidden">
+    <div className="flex sm:py-[70px]">
+      <div className="sm:w-2/3 mx-auto bg-white sm:rounded-xl shadow-lg overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] px-8 py-6 text-white">
-          <h2 className="text-2xl font-bold">Create Company Profile</h2>
-          <p className="text-white/90 mt-1">Complete your company information to get started</p>
+          <div className="flex items-center gap-4">
+            {/* Back Button with Lucide */}
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+              title="Go back"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            
+            {/* Title Section */}
+            <div>
+              <h2 className="text-2xl font-bold">Create Company Profile</h2>
+              <p className="text-white/90 mt-1">Complete your company information to get started</p>
+            </div>
+          </div>
         </div>
 
         <div className="p-8">
@@ -232,6 +250,54 @@ const Signup = ({ onSignupSuccess }) => {
                     disabled={isSubmitting}
                   />
                 </div>
+
+                <div>
+                  <label
+                    htmlFor="companyLegalStatus"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Company Legal Status *
+                  </label>
+                  <select
+                    id="companyLegalStatus"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C00FF]"
+                    name="companyLegalStatus"
+                    onChange={handleChange}
+                    value={formData.companyLegalStatus}
+                    disabled={isSubmitting}
+                    required
+                  >
+                    <option value="">Select Legal Status</option>
+                    <option value="Sole trader">Sole trader</option>
+                    <option value="Partnership">Partnership</option>
+                    <option value="Private limited company (Ltd)">Private limited company (Ltd)</option>
+                    <option value="Public limited company (PLC)">Public limited company (PLC)</option>
+                    <option value="Limited liability partnership (LLP)">Limited liability partnership (LLP)</option>
+                  </select>
+                </div>
+                <div>
+                  <label
+                    htmlFor="companyLegalStatus"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Company Business Type *
+                  </label>
+                    <select
+                      id="companyType"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#8C00FF]"
+                      name="companyType"
+                      onChange={handleChange}
+                      value={formData.companyType}
+                      disabled={isSubmitting}
+                      required
+                    >
+                      <option value="">Select Company Type</option>
+                      <option value="Construction">Construction</option>
+                      <option value="IT">IT</option>
+                      <option value="Consultant">Consultant</option>
+                    </select>
+                </div>
+
                 <div className="md:col-span-2">
                   <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-2">Company Website</label>
                   <input

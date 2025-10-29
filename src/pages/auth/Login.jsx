@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
-const Login = ({ onToggleSignup, onForgotPassword }) => {
+const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -22,7 +22,10 @@ const Login = ({ onToggleSignup, onForgotPassword }) => {
     }
 
     try {
+      
       const response = await authAPI.login(email, password);
+
+      console.log("User data:", response.user);
 
       if (response.success) {
         // Save token and user data
@@ -37,18 +40,22 @@ const Login = ({ onToggleSignup, onForgotPassword }) => {
         }, 2000);
         
       } else {
+        console.log("=== LOGIN FAILED ===");
+        console.log("Error message:", response.message);
+        console.log("Response data:", response);
         toast.error(response.message || "Login failed");
+        
       }
-    } catch (error) {
-      console.error("Login error:", error);
+    } catch (error) {      
       const message = error.response?.data?.message || "Network error. Please try again.";
       toast.error(message);
+      setIsLoading(false);
     }
   };
 
   return (
     <div className="flex justify-center items-center h-screen">
-      <div className="w-2/5 p-6 bg-white rounded-lg shadow-lg">
+      <div className="w-[450px] p-6 rounded-lg shadow-md m-4">
         <div className="text-center mb-6">
           <h2 className="text-2xl font-bold text-[#450693]">Welcome Back</h2>
           <p className="text-gray-600">Sign in to your account</p>
@@ -87,9 +94,8 @@ const Login = ({ onToggleSignup, onForgotPassword }) => {
 
           <button
             type="button"
-            onClick={onForgotPassword}
+            onClick={() => navigate('/forgot-password')}
             className="text-sm text-[#8C00FF] hover:text-[#450693] text-right w-full"
-            disabled={isLoading}
           >
             Forgot password?
           </button>

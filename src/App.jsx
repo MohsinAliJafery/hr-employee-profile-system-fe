@@ -13,6 +13,8 @@ import Login from './pages/auth/Login.jsx';
 import Signup from './pages/auth/Signup.jsx';
 import Dashboard from './pages/dashboard/Dashboard.jsx';
 import Layout from './components/layout/Layout.jsx';
+import ForgotPassword from './pages/auth/ForgotPassword.jsx';
+import ResetPassword from './pages/auth/ResetPassword.jsx';
 
 const App = () => {
 
@@ -20,6 +22,8 @@ const App = () => {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           
           {/* Dashboard & nested routes - no protection */}
           <Route path="/dashboard" element={<Layout />}>
