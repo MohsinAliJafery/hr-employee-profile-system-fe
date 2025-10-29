@@ -107,6 +107,8 @@ export default function Sidebar() {
                 <Link to="/dashboard/titles" className="block py-2 rounded hover:bg-white/10">Titles</Link>
                 <Link to="/dashboard/countries" className="block py-2 rounded hover:bg-white/10">Countries</Link>
                 <Link to="/dashboard/cities" className="block py-2 rounded hover:bg-white/10">Cities</Link>
+                <Link to="/dashboard/nationalities" className="block py-2 rounded hover:bg-white/10">Nationalities</Link>
+                <Link to="/dashboard/qualifications" className="block py-2 rounded hover:bg-white/10">Qualifications</Link>
               </div>
             )}
           </div>

@@ -15,6 +15,8 @@ import Layout from './components/layout/Layout.jsx';
 import ForgotPassword from './pages/auth/ForgotPassword.jsx';
 import ResetPassword from './pages/auth/ResetPassword.jsx';
 import Settings from './pages/settings/Settings.jsx';
+import NationalityList from './pages/nationalities/NationalityList.jsx';
+import EducationList from './pages/educations/EducationList.jsx';
 
 const App = () => {
 
@@ -38,6 +40,8 @@ const App = () => {
             <Route path="cities" element={<CityList />} />
             <Route path="desginations" element={<DesignationList />} />
             <Route path="titles" element={<TitlesList />} />
+            <Route path="nationalities" element={<NationalityList />} />
+            <Route path="qualifications" element={<EducationList />} />
           </Route>
     
           {/* Default redirect */}
