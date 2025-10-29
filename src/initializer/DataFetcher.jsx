@@ -60,53 +60,8 @@ const DataFetcher = () => {
   };
 
   return (
-    <div className="p-4 bg-white rounded-lg shadow-md max-w-md mx-auto mt-6">
-      <h2 className="text-xl font-semibold mb-4 text-center">📊 Data Fetcher</h2>
-      
-      {loading && (
-        <div className="text-center text-blue-600">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-          Loading all data...
-        </div>
-      )}
-
-      {error && (
-        <div className="text-red-600 text-center mb-4 p-2 bg-red-50 rounded">
-          {error}
-        </div>
-      )}
-
-      {!loading && !error && (
-        <div className="text-green-600 text-center mb-4 p-2 bg-green-50 rounded">
-          ✅ All data loaded successfully!
-        </div>
-      )}
-
-      <div className="text-center">
-        <button
-          onClick={handleRefresh}
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded disabled:opacity-50"
-        >
-          {loading ? 'Loading...' : 'Refresh Data'}
-        </button>
-      </div>
-
-      {/* Data Summary */}
-      {!loading && (
-        <div className="mt-4 text-sm text-gray-600">
-          <h3 className="font-semibold mb-2">Stored Data:</h3>
-          <div className="grid grid-cols-2 gap-2">
-            <div>Visa Types: {JSON.parse(localStorage.getItem('visaTypes') || '[]').length}</div>
-            <div>Departments: {JSON.parse(localStorage.getItem('departments') || '[]').length}</div>
-            <div>Designations: {JSON.parse(localStorage.getItem('designations') || '[]').length}</div>
-            <div>Titles: {JSON.parse(localStorage.getItem('titles') || '[]').length}</div>
-            <div>Countries: {JSON.parse(localStorage.getItem('countries') || '[]').length}</div>
-            <div>Cities: {JSON.parse(localStorage.getItem('cities') || '[]').length}</div>
-          </div>
-        </div>
-      )}
-    </div>
+    <>
+    </>
   );
 };
 
