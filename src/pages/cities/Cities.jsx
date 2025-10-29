@@ -1,49 +1,41 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Search, Edit, Trash2, Eye, Plus, X, Save, ChevronLeft, ChevronRight, Users, MapPin, Building2, UserPlus, UserMinus } from 'lucide-react';
 
 const CityList = () => {
-  // 🌍 Dummy Countries
-  const [countries] = useState([
-    { id: 1, name: 'Saudi Arabia' },
-    { id: 2, name: 'Pakistan' },
-    { id: 3, name: 'UAE' },
-    { id: 4, name: 'Qatar' },
-  ]);
+  const [cities, setCities] = useState([]);
+  const [filteredCities, setFilteredCities] = useState([]);
+  const [countries, setCountries] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
-  // 🧠 Dummy City Data
-  const [cities, setCities] = useState([
-    {
-      id: 1,
-      name: 'Riyadh',
-      countryId: 1,
-      employees: ['Ali Khan', 'Fatima Tariq'],
-      isActive: true,
-      isDefault: false,
-    },
-    {
-      id: 2,
-      name: 'Karachi',
-      countryId: 2,
-      employees: ['Sara Ahmed'],
-      isActive: true,
-      isDefault: true,
-    },
-    {
-      id: 3,
-      name: 'Dubai',
-      countryId: 3,
-      employees: ['Bilal Hussain', 'Zara Shah'],
-      isActive: false,
-      isDefault: false,
-    },
-    {
-      id: 4,
-      name: 'Doha',
-      countryId: 4,
-      employees: [],
-      isActive: true,
-      isDefault: false,
-    },
-  ]);
+  // Fetch cities and countries from backend
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [citiesRes, countriesRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/cities`),
+          axios.get(`${API_BASE_URL}/cities/countries`)
+        ]);
+        setCities(citiesRes.data);
+        setFilteredCities(citiesRes.data);
+        setCountries(countriesRes.data);
+      } catch (err) {
+        console.error("Error loading data:", err);
+      }
+    };
+    fetchData();
+  }, []);
+
+  // Search functionality
+  useEffect(() => {
+    const filtered = cities.filter(city =>
+      city.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (city.countryId?.name && city.countryId.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+    setFilteredCities(filtered);
+    setCurrentPage(1);
+  }, [searchTerm, cities]);
 
   const [newCity, setNewCity] = useState({
     name: '',
@@ -54,346 +46,600 @@ const CityList = () => {
 
   const [editingCity, setEditingCity] = useState(null);
   const [showEmployees, setShowEmployees] = useState(null);
+  const [newEmployee, setNewEmployee] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
 
   // 📄 Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 3;
+  const recordsPerPage = 20;
   const indexOfLast = currentPage * recordsPerPage;
   const indexOfFirst = indexOfLast - recordsPerPage;
-  const currentRecords = cities.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(cities.length / recordsPerPage);
+  const currentRecords = filteredCities.slice(indexOfFirst, indexOfLast);
+  const totalPages = Math.ceil(filteredCities.length / recordsPerPage);
 
   // ➕ Add City
-  const handleAddCity = () => {
+  const handleAddCity = async () => {
     if (!newCity.name.trim() || !newCity.countryId) {
       alert('⚠️ Please fill in both City Name and Country.');
       return;
     }
-    const exists = cities.find(
-      (c) => c.name.toLowerCase() === newCity.name.toLowerCase()
-    );
-    if (exists) {
-      alert('⚠️ City already exists!');
-      return;
-    }
 
-    setCities([
-      ...cities,
-      {
-        id: Date.now(),
+    try {
+      const res = await axios.post(`${API_BASE_URL}/cities`, {
         name: newCity.name,
-        countryId: Number(newCity.countryId),
-        employees: [],
+        countryId: newCity.countryId,
         isActive: newCity.isActive,
-        isDefault: newCity.isDefault,
-      },
-    ]);
-    setNewCity({ name: '', countryId: '', isActive: true, isDefault: false });
+        isDefault: newCity.isDefault
+      });
+
+      setCities([...cities, res.data]);
+      setNewCity({ name: '', countryId: '', isActive: true, isDefault: false });
+      setShowAddForm(false);
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Failed to save city!");
+    }
   };
 
   // ✏️ Edit City
-  const handleEdit = (city) => setEditingCity(city);
+  const handleEdit = (city) => setEditingCity({ ...city });
 
-  const handleSaveEdit = () => {
-    setCities((prev) =>
-      prev.map((c) =>
-        c.id === editingCity.id
-          ? {
-              ...editingCity,
-              countryId: Number(editingCity.countryId),
-              isActive: Boolean(editingCity.isActive),
-              isDefault: Boolean(editingCity.isDefault),
-            }
-          : c
-      )
-    );
-    setEditingCity(null);
+  const handleSaveEdit = async () => {
+    try {
+      const res = await axios.put(
+        `${API_BASE_URL}/cities/${editingCity._id}`,
+        {
+          name: editingCity.name,
+          countryId: editingCity.countryId,
+          isActive: editingCity.isActive,
+          isDefault: editingCity.isDefault
+        }
+      );
+
+      setCities(prev =>
+        prev.map(c => c._id === editingCity._id ? res.data : c)
+      );
+      setEditingCity(null);
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Error updating city");
+    }
   };
 
   const handleCancelEdit = () => setEditingCity(null);
 
+  const handleCancelAdd = () => {
+    setShowAddForm(false);
+    setNewCity({ name: '', countryId: '', isActive: true, isDefault: false });
+  };
+
   // ❌ Delete City
-  const handleDelete = (id) => {
-    if (window.confirm('Are you sure you want to delete this city?')) {
-      setCities(cities.filter((c) => c.id !== id));
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this city?')) return;
+
+    try {
+      await axios.delete(`${API_BASE_URL}/cities/${id}`);
+      setCities(cities.filter(c => c._id !== id));
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Failed to delete city");
     }
   };
 
-  // 🌍 Get Country Name
-  const getCountryName = (id) =>
-    countries.find((c) => c.id === id)?.name || 'N/A';
+  // 🔁 Toggle City Status
+  const handleToggleStatus = async (id) => {
+    try {
+      const res = await axios.patch(`${API_BASE_URL}/cities/${id}/toggle-status`);
+      setCities(prev =>
+        prev.map(c => c._id === id ? res.data : c)
+      );
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Failed to toggle status");
+    }
+  };
+
+  // 👥 Add Employee to City
+  const handleAddEmployee = async (cityId) => {
+    if (!newEmployee.trim()) {
+      alert('Please enter employee name.');
+      return;
+    }
+
+    try {
+      const res = await axios.post(`${API_BASE_URL}/cities/${cityId}/employees`, {
+        employeeName: newEmployee
+      });
+
+      setCities(prev =>
+        prev.map(c => c._id === cityId ? res.data : c)
+      );
+      setNewEmployee('');
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Failed to add employee");
+    }
+  };
+
+  // 👥 Remove Employee from City
+  const handleRemoveEmployee = async (cityId, employeeName) => {
+    if (!window.confirm(`Remove ${employeeName} from this city?`)) return;
+
+    try {
+      const res = await axios.delete(
+        `${API_BASE_URL}/cities/${cityId}/employees/${encodeURIComponent(employeeName)}`
+      );
+
+      setCities(prev =>
+        prev.map(c => c._id === cityId ? res.data : c)
+      );
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.error || "Failed to remove employee");
+    }
+  };
+
+  const getStatusBadge = (isActive) => {
+    return isActive ? (
+      <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+        Active
+      </span>
+    ) : (
+      <span className="px-3 py-1 bg-red-100 text-red-800 text-sm font-medium rounded-full">
+        Inactive
+      </span>
+    );
+  };
+
+  const getDefaultBadge = (isDefault) => {
+    return isDefault ? (
+      <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
+        Default
+      </span>
+    ) : null;
+  };
 
   return (
-    <div className="p-6 bg-white rounded-2xl shadow-md max-w-5xl mx-auto mt-6">
-      <h2 className="text-2xl font-semibold mb-4 text-center text-blue-700">
-        🏙️ City Management
-      </h2>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <div className="flex justify-center items-center gap-3 mb-4">
+            <div className="p-3 bg-gradient-to-r from-[#450693] to-[#8C00FF] rounded-2xl">
+              <Building2 className="text-white" size={32} />
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-[#450693] to-[#8C00FF] bg-clip-text text-transparent">
+            City Management
+          </h1>
+          <p className="text-gray-600 mt-2">Manage cities and their employee assignments across countries</p>
+        </div>
 
-      {/* ➕ Add City */}
-      <div className="grid grid-cols-5 gap-2 mb-6">
-        <input
-          type="text"
-          placeholder="Enter city name"
-          value={newCity.name}
-          onChange={(e) => setNewCity({ ...newCity, name: e.target.value })}
-          className="border p-2 rounded w-full"
-        />
-        <select
-          value={newCity.countryId}
-          onChange={(e) =>
-            setNewCity({ ...newCity, countryId: e.target.value })
-          }
-          className="border p-2 rounded w-full"
-        >
-          <option value="">Select Country</option>
-          {countries.map((country) => (
-            <option key={country.id} value={country.id}>
-              {country.name}
-            </option>
-          ))}
-        </select>
+        {/* Controls Section */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+          <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
+            {/* Search Bar */}
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="text"
+                placeholder="Search cities or countries..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C00FF] focus:border-transparent"
+              />
+            </div>
 
-        {/* isActive */}
-        <label className="flex items-center gap-2 justify-center">
-          <input
-            type="checkbox"
-            checked={newCity.isActive}
-            onChange={(e) =>
-              setNewCity({ ...newCity, isActive: e.target.checked })
-            }
-            className="h-5 w-5 accent-green-600 cursor-pointer"
-          />
-          Active
-        </label>
+            {/* Add Button */}
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="flex items-center gap-2 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity"
+            >
+              <Plus size={20} />
+              Add City
+            </button>
+          </div>
 
-        {/* isDefault */}
-        <label className="flex items-center gap-2 justify-center">
-          <input
-            type="checkbox"
-            checked={newCity.isDefault}
-            onChange={(e) =>
-              setNewCity({ ...newCity, isDefault: e.target.checked })
-            }
-            className="h-5 w-5 accent-blue-600 cursor-pointer"
-          />
-          Default
-        </label>
+          {/* Results Count */}
+          <div className="mt-4 text-sm text-gray-600">
+            Showing {filteredCities.length} of {cities.length} cities
+          </div>
+        </div>
 
-        <button
-          onClick={handleAddCity}
-          className="bg-blue-600 text-white px-4 py-2 rounded"
-        >
-          Add
-        </button>
-      </div>
-
-      {/* 📋 City Table */}
-      <table className="w-full border border-gray-300 rounded-lg overflow-hidden">
-        <thead>
-          <tr className="bg-blue-100 text-blue-900">
-            <th className="border p-3 text-left">City</th>
-            <th className="border p-3 text-left">Country</th>
-            <th className="border p-3 text-center">Active</th>
-            <th className="border p-3 text-center">Default</th>
-            <th className="border p-3 text-center">Employees</th>
-            <th className="border p-3 text-center">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {currentRecords.map((city) => (
-            <React.Fragment key={city.id}>
-              <tr
-                className={`hover:bg-blue-50 ${
-                  showEmployees === city.id ? 'bg-blue-50' : ''
-                }`}
+        {/* Add City Form */}
+        {showAddForm && (
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border-2 border-[#8C00FF]">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-[#450693]">Add New City</h3>
+              <button
+                onClick={handleCancelAdd}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
               >
-                {/* City Name */}
-                <td className="border p-3">
-                  {editingCity?.id === city.id ? (
-                    <input
-                      type="text"
-                      value={editingCity.name}
-                      onChange={(e) =>
-                        setEditingCity({ ...editingCity, name: e.target.value })
-                      }
-                      className="border p-1 rounded w-full"
-                    />
-                  ) : (
-                    city.name
-                  )}
-                </td>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-end">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  City Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter city name"
+                  value={newCity.name}
+                  onChange={(e) => setNewCity({ ...newCity, name: e.target.value })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C00FF]"
+                />
+              </div>
 
-                {/* Country */}
-                <td className="border p-3">
-                  {editingCity?.id === city.id ? (
-                    <select
-                      value={editingCity.countryId}
-                      onChange={(e) =>
-                        setEditingCity({
-                          ...editingCity,
-                          countryId: e.target.value,
-                        })
-                      }
-                      className="border p-1 rounded w-full"
-                    >
-                      <option value="">Select Country</option>
-                      {countries.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    getCountryName(city.countryId)
-                  )}
-                </td>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Country
+                </label>
+                <select
+                  value={newCity.countryId}
+                  onChange={(e) =>
+                    setNewCity({ ...newCity, countryId: e.target.value })
+                  }
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C00FF]"
+                >
+                  <option value="">Select Country</option>
+                  {countries.map((country) => (
+                    <option key={country._id} value={country._id}>
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-                {/* isActive */}
-                <td className="border p-3 text-center">
-                  {editingCity?.id === city.id ? (
-                    <input
-                      type="checkbox"
-                      checked={Boolean(editingCity.isActive)}
-                      onChange={(e) =>
-                        setEditingCity({
-                          ...editingCity,
-                          isActive: e.target.checked,
-                        })
-                      }
-                      className="h-5 w-5 accent-green-600 cursor-pointer"
-                    />
-                  ) : city.isActive ? (
-                    'Active'
-                  ) : (
-                    'In-Active'
-                  )}
-                </td>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newCity.isActive}
+                    onChange={(e) =>
+                      setNewCity({ ...newCity, isActive: e.target.checked })
+                    }
+                    className="h-5 w-5 accent-[#8C00FF] cursor-pointer"
+                  />
+                  <label className="text-sm font-medium text-gray-700">Active</label>
+                </div>
 
-                {/* isDefault */}
-                <td className="border p-3 text-center">
-                  {editingCity?.id === city.id ? (
-                    <input
-                      type="checkbox"
-                      checked={Boolean(editingCity.isDefault)}
-                      onChange={(e) =>
-                        setEditingCity({
-                          ...editingCity,
-                          isDefault: e.target.checked,
-                        })
-                      }
-                      className="h-5 w-5 accent-blue-600 cursor-pointer"
-                    />
-                  ) : city.isDefault ? (
-                    'Yes'
-                  ) : (
-                    'No'
-                  )}
-                </td>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={newCity.isDefault}
+                    onChange={(e) =>
+                      setNewCity({ ...newCity, isDefault: e.target.checked })
+                    }
+                    className="h-5 w-5 accent-[#8C00FF] cursor-pointer"
+                  />
+                  <label className="text-sm font-medium text-gray-700">Default</label>
+                </div>
+              </div>
 
-                {/* Employees Count */}
-                <td className="border p-3 text-center">
-                  {city.employees.length}
-                </td>
+              <div className="lg:col-span-2 flex gap-2">
+                <button
+                  onClick={handleAddCity}
+                  className="flex-1 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] text-white px-4 py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                >
+                  Add City
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-                {/* Actions */}
-                <td className="border p-3 text-center space-x-2">
-                  {editingCity?.id === city.id ? (
-                    <>
-                      <button
-                        onClick={handleSaveEdit}
-                        className="bg-green-500 text-white px-3 py-1 rounded"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        className="bg-gray-400 text-white px-3 py-1 rounded"
-                      >
-                        Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button
-                        onClick={() =>
-                          setShowEmployees(
-                            showEmployees === city.id ? null : city.id
-                          )
-                        }
-                        className="bg-blue-500 text-white px-3 py-1 rounded"
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={() => handleEdit(city)}
-                        className="bg-yellow-500 text-white px-3 py-1 rounded"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(city.id)}
-                        className="bg-red-500 text-white px-3 py-1 rounded"
-                      >
-                        Delete
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
+        {/* Edit City Form */}
+        {editingCity && (
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border-2 border-[#FFC400]">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-[#450693]">Edit City</h3>
+              <button
+                onClick={handleCancelEdit}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-end">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  City Name
+                </label>
+                <input
+                  type="text"
+                  value={editingCity.name}
+                  onChange={(e) =>
+                    setEditingCity({ ...editingCity, name: e.target.value })
+                  }
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C00FF]"
+                />
+              </div>
 
-              {/* 👥 Employees Under City */}
-              {showEmployees === city.id && (
-                <tr>
-                  <td colSpan="6" className="border p-3 bg-gray-50">
-                    <h4 className="font-semibold mb-2">
-                      Employees in {city.name}
-                    </h4>
-                    {city.employees.length > 0 ? (
-                      <ul className="list-disc pl-6">
-                        {city.employees.map((emp, i) => (
-                          <li key={i}>{emp}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-gray-500">
-                        No employees in this city.
-                      </p>
-                    )}
-                    <div className="text-right mt-2">
-                      <button
-                        onClick={() => setShowEmployees(null)}
-                        className="text-sm text-blue-600 hover:underline"
-                      >
-                        Close
-                      </button>
-                    </div>
-                  </td>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Country
+                </label>
+                <select
+                  value={editingCity.countryId}
+                  onChange={(e) =>
+                    setEditingCity({
+                      ...editingCity,
+                      countryId: e.target.value,
+                    })
+                  }
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C00FF]"
+                >
+                  <option value="">Select Country</option>
+                  {countries.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={editingCity.isActive}
+                    onChange={(e) =>
+                      setEditingCity({
+                        ...editingCity,
+                        isActive: e.target.checked,
+                      })
+                    }
+                    className="h-5 w-5 accent-[#8C00FF] cursor-pointer"
+                  />
+                  <label className="text-sm font-medium text-gray-700">Active</label>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={editingCity.isDefault}
+                    onChange={(e) =>
+                      setEditingCity({
+                        ...editingCity,
+                        isDefault: e.target.checked,
+                      })
+                    }
+                    className="h-5 w-5 accent-[#8C00FF] cursor-pointer"
+                  />
+                  <label className="text-sm font-medium text-gray-700">Default</label>
+                </div>
+              </div>
+
+              <div className="lg:col-span-2 flex gap-2">
+                <button
+                  onClick={handleSaveEdit}
+                  className="flex-1 bg-green-500 text-white px-4 py-3 rounded-lg font-semibold hover:bg-green-600 transition-colors"
+                >
+                  <Save size={16} className="inline mr-2" />
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cities Table */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gradient-to-r from-[#450693] to-[#8C00FF] text-white">
+                  <th className="p-4 text-left font-semibold">City</th>
+                  <th className="p-4 text-left font-semibold">Country</th>
+                  <th className="p-4 text-center font-semibold">Status</th>
+                  <th className="p-4 text-center font-semibold">Default</th>
+                  <th className="p-4 text-center font-semibold">Employees</th>
+                  <th className="p-4 text-center font-semibold">Actions</th>
                 </tr>
-              )}
-            </React.Fragment>
-          ))}
-        </tbody>
-      </table>
+              </thead>
+              <tbody>
+                {currentRecords.map((city, index) => (
+                  <React.Fragment key={city._id}>
+                    <tr className={`border-b hover:bg-gray-50 transition-colors ${
+                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                    }`}>
+                      {/* City Name */}
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] rounded-full flex items-center justify-center text-white">
+                            <MapPin size={16} />
+                          </div>
+                          <div className="font-medium text-gray-900">{city.name}</div>
+                        </div>
+                      </td>
 
-      {/* Pagination */}
-      <div className="flex justify-center mt-4 gap-2">
-        <button
-          disabled={currentPage === 1}
-          onClick={() => setCurrentPage((p) => p - 1)}
-          className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-        >
-          Prev
-        </button>
-        <span className="px-3 py-1 bg-blue-100 rounded text-blue-800">
-          Page {currentPage} of {totalPages}
-        </span>
-        <button
-          disabled={currentPage === totalPages}
-          onClick={() => setCurrentPage((p) => p + 1)}
-          className="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-        >
-          Next
-        </button>
+                      {/* Country */}
+                      <td className="p-4">
+                        <div className="flex items-center gap-2 text-gray-700">
+                          <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                            {city.countryId?.name || 'N/A'}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Status */}
+                      <td className="p-4 text-center">
+                        {getStatusBadge(city.isActive)}
+                      </td>
+
+                      {/* Default */}
+                      <td className="p-4 text-center">
+                        {getDefaultBadge(city.isDefault)}
+                      </td>
+
+                      {/* Employees Count */}
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <Users size={16} className="text-blue-500" />
+                          <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                            {city.employees.length}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="p-4 text-center">
+                        <div className="flex justify-center gap-2">
+                          <button
+                            onClick={() =>
+                              setShowEmployees(
+                                showEmployees === city._id ? null : city._id
+                              )
+                            }
+                            className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                            title="View Employees"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(city)}
+                            className="flex items-center gap-1 bg-[#FFC400] text-white px-3 py-2 rounded-lg hover:bg-[#E6B000] transition-colors"
+                            title="Edit"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleToggleStatus(city._id)}
+                            className={`flex items-center gap-1 px-3 py-2 rounded-lg text-white transition-colors ${
+                              city.isActive
+                                ? 'bg-gray-500 hover:bg-gray-600'
+                                : 'bg-green-500 hover:bg-green-600'
+                            }`}
+                            title={city.isActive ? 'Deactivate' : 'Activate'}
+                          >
+                            {city.isActive ? 'Deactivate' : 'Activate'}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(city._id)}
+                            className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* 👥 Employees Under City */}
+                    {showEmployees === city._id && (
+                      <tr>
+                        <td colSpan="6" className="p-6 bg-gradient-to-r from-purple-50 to-pink-50">
+                          <div className="flex justify-between items-start mb-4">
+                            <h4 className="font-semibold text-[#450693]">
+                              Employees in {city.name}
+                            </h4>
+                            <button
+                              onClick={() => setShowEmployees(null)}
+                              className="text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <X size={20} />
+                            </button>
+                          </div>
+                          
+                          {/* Add Employee Form */}
+                          <div className="flex gap-2 mb-6">
+                            <div className="relative flex-1">
+                              <UserPlus className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                              <input
+                                type="text"
+                                placeholder="Enter employee name"
+                                value={newEmployee}
+                                onChange={(e) => setNewEmployee(e.target.value)}
+                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C00FF]"
+                              />
+                            </div>
+                            <button
+                              onClick={() => handleAddEmployee(city._id)}
+                              className="flex items-center gap-2 bg-green-500 text-white px-4 py-3 rounded-lg hover:bg-green-600 transition-colors"
+                            >
+                              <UserPlus size={16} />
+                              Add Employee
+                            </button>
+                          </div>
+
+                          {city.employees.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {city.employees.map((emp, i) => (
+                                <div
+                                  key={i}
+                                  className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                      {emp.charAt(0)}
+                                    </div>
+                                    <span className="font-medium text-gray-900">{emp}</span>
+                                  </div>
+                                  <button
+                                    onClick={() => handleRemoveEmployee(city._id, emp)}
+                                    className="text-red-500 hover:text-red-700 transition-colors"
+                                    title="Remove Employee"
+                                  >
+                                    <UserMinus size={16} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 text-gray-500">
+                              <Users size={48} className="mx-auto mb-3 text-gray-300" />
+                              No employees in this city.
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+
+            {currentRecords.length === 0 && (
+              <div className="text-center py-12 text-gray-500">
+                {searchTerm ? 'No cities found matching your search.' : 'No cities available.'}
+              </div>
+            )}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-6 border-t border-gray-200">
+              <div className="text-sm text-gray-600">
+                Showing {indexOfFirst + 1} to {Math.min(indexOfLast, filteredCities.length)} of {filteredCities.length} entries
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                  className="flex items-center gap-1 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft size={16} />
+                  Previous
+                </button>
+                <span className="px-4 py-2 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] text-white rounded-lg font-medium">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  className="flex items-center gap-1 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

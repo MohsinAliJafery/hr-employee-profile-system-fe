@@ -1,5 +1,4 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import EmployeeForm from './components/employees/EmployeeForm.jsx';
 import EmployeeList from './pages/employee/Employees.jsx';
 import DepartmentList from './pages/department/Departments.jsx';
 import DocumentsList from './pages/documents/Documents.jsx';
@@ -15,6 +14,7 @@ import Dashboard from './pages/dashboard/Dashboard.jsx';
 import Layout from './components/layout/Layout.jsx';
 import ForgotPassword from './pages/auth/ForgotPassword.jsx';
 import ResetPassword from './pages/auth/ResetPassword.jsx';
+import Settings from './pages/settings/Settings.jsx';
 
 const App = () => {
 
@@ -24,12 +24,12 @@ const App = () => {
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/settings" element={<Settings />} />
           
           {/* Dashboard & nested routes - no protection */}
           <Route path="/dashboard" element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="employees" element={<EmployeeList />} />
-            <Route path="employee/add" element={<EmployeeForm />} />
             <Route path="employee/residencystatus" element={<ResidencyStatus />} />
             <Route path="departments" element={<DepartmentList />} />
             <Route path="documents" element={<DocumentsList />} />

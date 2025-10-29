@@ -18,6 +18,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
+import { getTitles, getDepartments, getDesignations, getCountries, getCities, getVisaTypes } from '@/utils/employeeFormDataUtils';
+import DataFetcher from '@/initializer/DataFetcher';
 
 // Step 1 Component - Personal Information
 const PersonalInfoStep = ({
@@ -62,12 +64,35 @@ const PersonalInfoStep = ({
   const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   const MARITAL_STATUSES = ['Single', 'Married', 'Divorced', 'Widowed', 'Separated'];
   const GENDERS = ['Male', 'Female', 'Other'];
-  const TITLES = ['Mr.', 'Mrs.', 'Ms.', 'Miss', 'Dr.', 'Prof.'];
+  const titles = getTitles();
+  const countries = getCountries();
+  const cities = getCities();
+  const visaTypes = getVisaTypes();
+  const today = new Date().toISOString().split("T")[0];
+
+
+  useEffect(() => {
+  console.log(titles, "getTitles");
+  });
 
   const handleAddressSelect = (suggestion) => {
     // You can use the full suggestion data if needed
     console.log('Selected address:', suggestion);
     // The address value is already updated via onChange in the AddressAutocomplete component
+  };
+
+    const [emailError, setEmailError] = useState("");
+
+  const handleEmailChange = (e) => {
+    const { value } = e.target;
+    onInputChange(e); // keep your original handler
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) {
+      setEmailError("Please enter a valid email address.");
+    } else {
+      setEmailError("");
+    }
   };
 
   return (
@@ -86,13 +111,13 @@ const PersonalInfoStep = ({
                <img 
                 src={URL.createObjectURL(profilePicture)} 
                 alt="Profile preview" 
-                className="w-32 h-32 rounded-full object-cover border-2 border-gray-300"
+                className="w-40 h-40 rounded-full object-cover border-2 border-gray-300"
               />
             ) : formData.profilePicturePath ? (
               <img 
                 src={`http://localhost:5000/uploads/${formData.profilePicturePath}`}
                 alt="Current profile" 
-                className="w-32 h-32 rounded-full object-cover border-2 border-gray-300"
+                className="w-40 h-40 rounded-full object-cover border-2 border-gray-300"
               />
             ) : (
               <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center border-2 border-dashed border-gray-300">
@@ -120,6 +145,18 @@ const PersonalInfoStep = ({
               Recommended: Square image, 500x500px, Max 2MB
             </p>
           </div>
+                <div className="md:col-span-2">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              name="isActive"
+              checked={formData.isActive || false}
+              onChange={onInputChange}
+              className="h-6 w-6 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label className="ml-2 block text-md text-gray-900">Active Employee</label>
+          </div>
+        </div>
         </div>
       </div>
 
@@ -135,9 +172,9 @@ const PersonalInfoStep = ({
             required
           >
             <option value="">Select Title</option>
-            {TITLES.map((title) => (
-              <option key={title} value={title}>
-                {title}
+            {titles.map(title => (
+              <option key={title._id} value={title._id}>
+                {title.title} {title.isDefault}
               </option>
             ))}
           </select>
@@ -184,11 +221,12 @@ const PersonalInfoStep = ({
         {/* Date of Birth */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth *</label>
-          <input
+            <input
             type="date"
             name="dateOfBirth"
             value={formData.dateOfBirth || ''}
             onChange={onInputChange}
+            max={new Date().toISOString().split('T')[0]} // prevents future dates
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             required
           />
@@ -247,7 +285,7 @@ const PersonalInfoStep = ({
 
         {/* Marital Status */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Marital Status *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Marital Status</label>
           <select
             name="maritalStatus"
             value={formData.maritalStatus || ''}
@@ -283,19 +321,36 @@ const PersonalInfoStep = ({
           </select>
         </div>
 
-        {/* Email Address */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">National Insurance Number *</label>
           <input
-            type="email"
-            name="email"
-            value={formData.email || ''}
+            type="text"
+            name="nationaInsuranceNumber"
+            value={'' || ''}
             onChange={onInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="e.g., john.doe@company.com"
             required
           />
         </div>
+
+        {/* Email Address */}
+            <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Email Address *
+      </label>
+      <input
+        type="email"
+        name="email"
+        value={formData.email || ""}
+        onChange={handleEmailChange}
+        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        placeholder="e.g., john.doe@company.com"
+        required
+      />
+      {emailError && (
+        <p className="text-red-500 text-sm mt-1">{emailError}</p>
+      )}
+    </div>
 
         {/* Contact No */}
         <div>
@@ -311,58 +366,8 @@ const PersonalInfoStep = ({
           />
         </div>
 
-        {/* Mobile No */}
+                {/* Address - Full width */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Mobile No. *</label>
-          <input
-            type="tel"
-            name="mobileNo"
-            value={formData.mobileNo || ''}
-            onChange={onInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="e.g., +44 7700 900077"
-            required
-          />
-        </div>
-
-        {/* Country */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Country *</label>
-          <select
-            name="country"
-            value={formData.country || ''}
-            onChange={onInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          >
-            <option value="">Select Country</option>
-            <option value="United Kingdom">United Kingdom</option>
-            {/* Add more countries if needed */}
-          </select>
-        </div>
-
-        {/* City */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
-          <select
-            name="city"
-            value={formData.city || ''}
-            onChange={onInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          >
-            <option value="">Select City</option>
-            {ukCities.map((city) => (
-              <option key={city} value={city}>
-                {city}
-              </option>
-            ))}
-          </select>
-        </div>
-
-
-        {/* Address - Full width */}
-        <div className="">
           <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
           <AddressAutocomplete
             value={formData.address || ''}
@@ -375,7 +380,64 @@ const PersonalInfoStep = ({
             Start typing your address and select from suggestions
           </p>
         </div>
+
+
+         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Post Code *</label>
+          <input
+            type="text"
+            name="postCode"
+            value={formData.postCode || ''}
+            onChange={onInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="e.g., SPA 7DE"
+            required
+          />
+        </div>
+
+
+        {/* City */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
+          <select
+            name="city"
+            value={formData.city || ''}
+            onChange={onInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          >
+           <option value="">Select City</option>
+{cities.map(city => (
+  <option key={city._id} value={city._id}>
+    {city.name} {city.isDefault}
+  </option>
+))}
+          </select>
+        </div>
+
+        {/* Country */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Country *</label>
+          <select
+            name="country"
+            value={formData.country || ''}
+            onChange={onInputChange}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          >
+          <option value="">Select Country</option>
+{countries.map(country => (
+  <option key={country._id} value={country._id}>
+    {country.name} {country.isDefault}
+  </option>
+))}
+          </select>
+        </div>
+
       </div>
+
+
+
 
       <div className="border-t pt-6">
         <h4 className="text-lg font-semibold text-gray-900 mb-4">Visa Information</h4>
@@ -389,12 +451,12 @@ const PersonalInfoStep = ({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             >
-              <option value="">Select Visa Type</option>
-              <option value="Tier 2 (General)">Tier 2 (General)</option>
-              <option value="Tier 2 (Intra-company Transfer)">Tier 2 (Intra-company Transfer)</option>
-              <option value="Skilled Worker Visa">Skilled Worker Visa</option>
-              <option value="Global Talent Visa">Global Talent Visa</option>
-              <option value="Start-up Visa">Start-up Visa</option>
+             <option value="">Select Visa Type</option>
+              {visaTypes.map(visaType => (
+                <option key={visaType._id} value={visaType._id}>
+                  {visaType.type}
+                </option>
+))}
             </select>
           </div>
 
@@ -405,12 +467,13 @@ const PersonalInfoStep = ({
               name="visaExpiry"
               value={formData.visaExpiry || ''}
               onChange={onInputChange}
+              min={today}          // <-- this prevents selecting earlier dates
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
           </div>
 
-          <div className="md:col-span-2">
+          {/* <div className="md:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-2">Visa Document Upload</label>
             <div className="flex items-center gap-3">
               <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
@@ -462,7 +525,7 @@ const PersonalInfoStep = ({
             <p className="text-xs text-gray-500 mt-1">
               {formData.visaDocumentPath ? 'Current file will be kept if no new file is selected' : 'Upload visa copy (PDF, DOC, JPG, PNG - Max 5MB)'}
             </p>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
@@ -548,59 +611,6 @@ const EducationStep = ({
               </select>
             </div>
 
-           <div>
-  <label className="block text-sm font-medium text-gray-700 mb-2">Upload Certificate</label>
-  <div className="space-y-2">
-    <div className="flex items-center gap-3">
-      <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
-        <Upload size={16} />
-        {edu.documentPath ? 'Change File' : 'Choose File'}
-        <input
-          type="file"
-          className="hidden"
-          accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) {
-              onFileUpload(index, file);
-            }
-          }}
-        />
-      </label>
-      
-      {/* Show current certificate from database with download link */}
-      {!edu.file && edu.documentPath && (
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 text-sm text-green-600">
-            <FileText size={16} />
-            <span>Current: </span>
-          </div>
-          <a 
-            href={`http://localhost:5000/uploads/${edu.documentPath}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 text-sm underline flex items-center gap-1"
-          >
-            <FileText size={14} />
-            Download
-          </a>
-        </div>
-      )}
-      
-      {/* Show newly selected file */}
-      {edu.file && (
-        <div className="flex items-center gap-2 text-sm text-blue-600">
-          <FileText size={16} />
-          <span>New: {edu.file.name}</span>
-        </div>
-      )}
-    </div>
-    <p className="text-xs text-gray-500">
-      {edu.documentPath ? 'Current file will be kept if no new file is selected' : 'Supported formats: PDF, DOC, DOCX, JPG, PNG (Max 5MB)'}
-    </p>
-  </div>
-</div>
-
           </div>
         </div>
       ))}
@@ -620,94 +630,231 @@ const EducationStep = ({
 // Step 3 Component - Employment Details
 const EmploymentStep = ({
   formData,
-  onInputChange,
-  departments,
-  jobTitles
+  onEmploymentChange,
+  onAddEmployment,
+  onRemoveEmployment
 }) => {
+  // Function to calculate duration between two dates
+  const calculateDuration = (startDate, endDate) => {
+    if (!startDate) return '';
+    
+    const start = new Date(startDate);
+    const end = endDate === 'Present' ? new Date() : new Date(endDate);
+    
+    const years = end.getFullYear() - start.getFullYear();
+    const months = end.getMonth() - start.getMonth();
+    
+    let totalMonths = years * 12 + months;
+    if (totalMonths < 0) totalMonths = 0;
+    
+    const yearsPart = Math.floor(totalMonths / 12);
+    const monthsPart = totalMonths % 12;
+    
+    const parts = [];
+    if (yearsPart > 0) parts.push(`${yearsPart} year${yearsPart !== 1 ? 's' : ''}`);
+    if (monthsPart > 0) parts.push(`${monthsPart} month${monthsPart !== 1 ? 's' : ''}`);
+    
+    return parts.join(' ') || '0 months';
+  };
+
+  // Handle date changes and auto-calculate duration
+  const handleDateChange = (index, field, value) => {
+    onEmploymentChange(index, field, value);
+    
+    // Auto-calculate duration when both dates are available
+    const employment = formData.employments[index];
+    if (field === 'startDate' || field === 'endDate') {
+      const startDate = field === 'startDate' ? value : employment.startDate;
+      const endDate = field === 'endDate' ? value : employment.endDate;
+      
+      if (startDate) {
+        const duration = calculateDuration(startDate, endDate);
+        onEmploymentChange(index, 'duration', duration);
+      }
+    }
+  };
+
+  const handleEmploymentChange = (index, field, value) => {
+  const updatedEmployments = formData.employments.map((emp, i) => 
+    i === index ? { ...emp, [field]: value } : emp
+  );
+  setFormData({ ...formData, employments: updatedEmployments });
+};
+
+
   return (
-    <div className="space-y-6 h-auto py-[70px]">
-      <div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Employment Details</h3>
-        <p className="text-gray-600 mb-6">Company position and compensation information</p>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Employment History</h3>
+          <p className="text-gray-600">Add your work experience and employment details</p>
+        </div>
+        <button
+          type="button"
+          onClick={onAddEmployment}
+          className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus size={16} />
+          Add New
+        </button>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Department *</label>
-          <select
-            name="department"
-            value={formData.department || ''}
-            onChange={onInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          >
-            <option value="">Select Department</option>
-            {departments.map((dept) => (
-              <option key={dept} value={dept}>
-                {dept}
-              </option>
-            ))}
-          </select>
-        </div>
+      {formData.employments.map((employment, index) => (
+        <div key={index} className="border border-gray-200 rounded-lg p-6">
+          <div className="flex justify-between items-center mb-4">
+            <h4 className="text-lg font-medium text-gray-900">Employment #{index + 1}</h4>
+            {formData.employments.length > 1 && (
+              <button
+                type="button"
+                onClick={() => onRemoveEmployment(index)}
+                className="text-red-600 hover:text-red-700"
+              >
+                <X size={20} />
+              </button>
+            )}
+          </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Job Title *</label>
-          <select
-            name="jobTitle"
-            value={formData.jobTitle || ''}
-            onChange={onInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-            disabled={!formData.department}
-          >
-            <option value="">Select Job Title</option>
-            {formData.department &&
-              jobTitles[formData.department]?.map((title) => (
-                <option key={title} value={title}>
-                  {title}
-                </option>
-              ))}
-          </select>
-        </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Employer Name */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Employer Name *
+              </label>
+              <input
+                type="text"
+                value={employment.employerName || ''}
+                onChange={(e) => onEmploymentChange(index, 'employerName', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., Google Inc."
+                required
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Start Date *</label>
-          <input
-            type="date"
-            name="startDate"
-            value={formData.startDate || ''}
-            onChange={onInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            required
-          />
-        </div>
+            {/* Job Title */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Job Title / Position Held *
+              </label>
+              <input
+                type="text"
+                value={employment.jobTitle || ''}
+                onChange={(e) => onEmploymentChange(index, 'jobTitle', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., Senior Software Engineer"
+                required
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Salary (£) *</label>
-          <input
-            type="text"
-            name="salary"
-            value={formData.salary || ''}
-            onChange={onInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="e.g., 45000"
-            required
-          />
-        </div>
+            {/* Employment Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Employment Type *
+              </label>
+              <select
+                value={employment.employmentType || ''}
+                onChange={(e) => onEmploymentChange(index, 'employmentType', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              >
+                <option value="">Select Type</option>
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Contract">Contract</option>
+                <option value="Internship">Internship</option>
+                <option value="Freelance">Freelance</option>
+                <option value="Self-employed">Self-employed</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
 
-        <div className="md:col-span-2">
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              name="isActive"
-              checked={formData.isActive || false}
-              onChange={onInputChange}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label className="ml-2 block text-sm text-gray-900">Active Employee</label>
+            {/* Company Address */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Company Address / Location *
+              </label>
+              <input
+                type="text"
+                value={employment.companyAddress || ''}
+                onChange={(e) => onEmploymentChange(index, 'companyAddress', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., San Francisco, CA, USA"
+                required
+              />
+            </div>
+
+            {/* Department (Optional) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Department / Division (optional)
+              </label>
+              <input
+                type="text"
+                value={employment.department || ''}
+                onChange={(e) => onEmploymentChange(index, 'department', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="e.g., Engineering Department"
+              />
+            </div>
+
+            {/* Start Date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Start Date *
+              </label>
+              <input
+                type="month"
+                value={employment.startDate || ''}
+                onChange={(e) => handleDateChange(index, 'startDate', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                required
+              />
+            </div>
+
+            {/* End Date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                End Date *
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="month"
+                  value={employment.endDate === 'Present' ? '' : employment.endDate || ''}
+                  onChange={(e) => handleDateChange(index, 'endDate', e.target.value)}
+                  disabled={employment.endDate === 'Present'}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
+                  required={employment.endDate !== 'Present'}
+                />
+                <label className="flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={employment.endDate === 'Present'}
+                    onChange={(e) => 
+                      handleDateChange(index, 'endDate', e.target.checked ? 'Present' : '')
+                    }
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  Present
+                </label>
+              </div>
+            </div>
+
+            {/* Total Duration */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Total Duration
+              </label>
+              <input
+                type="text"
+                value={employment.duration || ''}
+                onChange={(e) => onEmploymentChange(index, 'duration', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                placeholder="Auto-calculated"
+                readOnly
+              />
+            </div>
           </div>
         </div>
-      </div>
+      ))}
     </div>
   );
 };
@@ -1546,8 +1693,13 @@ const EmployeeList = () => {
   const [visaFile, setVisaFile] = useState(null);
   const [profilePicture, setProfilePicture] = useState(null);
 
-  const recordsPerPage = 5;
+  // Fetching data from employees for inputs
+  // const titles = getTitles();
+  const departments = getDepartments();
+  const designations = getDesignations();
 
+
+  const recordsPerPage = 5;
   const [formData, setFormData] = useState({
       title: '',
     firstName: '',
@@ -1565,6 +1717,7 @@ const EmployeeList = () => {
     city: '',
     nationality: '',
     address: '',
+    postCode: '',
     visaType: '',
     visaExpiry: '',
     visaDocument: '',
@@ -1573,6 +1726,18 @@ const EmployeeList = () => {
     startDate: '',
     salary: '',
     isActive: true,
+      employments: [
+    {
+      employerName: '',
+      jobTitle: '',
+      employmentType: '',
+      companyAddress: '',
+      department: '',
+      startDate: '',
+      endDate: '',
+      duration: ''
+    }
+  ],
     educations: [{ degree: '', institute: '', passingYear: '', file: null }],
       nextOfKins: [{
       fullName: '',
@@ -1807,9 +1972,6 @@ const removeDocumentField = useCallback((idx) => {
       toast.error('Please fill all required education fields');
       return;
     }
-
-  
-
 
     // ✅ Log education files for debugging
     console.log('Education files to upload:');
@@ -2218,6 +2380,8 @@ const handleEditEmployee = async (e) => {
           Add Employee
         </button>
       </div>
+
+      <DataFetcher />
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
