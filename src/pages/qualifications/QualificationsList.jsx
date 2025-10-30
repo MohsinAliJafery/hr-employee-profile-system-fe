@@ -1,52 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, Trash2, Eye, Plus, Search, Save, X, ChevronLeft, ChevronRight, Users, Briefcase } from 'lucide-react';
+import { Edit, Trash2, Eye, Plus, Search, Save, X, ChevronLeft, ChevronRight, Users, GraduationCap } from 'lucide-react';
 import axios from 'axios';
 
-const DesignationList = () => {
-  const [designations, setDesignations] = useState([]);
-  const [filteredDesignations, setFilteredDesignations] = useState([]);
-  const [departments, setDepartments] = useState([]);
+const QualificationList = () => {
+  const [qualifications, setQualifications] = useState([]);
+  const [filteredQualifications, setFilteredQualifications] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
-  // Check if there's already a default designation (only one allowed globally)
-  const hasDefault = designations.some(desig => desig.isDefault);
-  const currentDefault = designations.find(desig => desig.isDefault);
+  // Check if there's already a default qualification (only one allowed globally)
+  const hasDefault = qualifications.some(qual => qual.isDefault);
+  const currentDefault = qualifications.find(qual => qual.isDefault);
 
-  // Fetch designations and departments from backend
+  // Fetch qualifications from backend
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchQualifications = async () => {
       try {
-        const [desigRes, deptRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/designations`),
-          axios.get(`${API_BASE_URL}/departments`)
-        ]);
-        setDesignations(desigRes.data);
-        setFilteredDesignations(desigRes.data);
-        setDepartments(deptRes.data);
+        const res = await axios.get(`${API_BASE_URL}/qualifications`);
+        setQualifications(res.data);
+        setFilteredQualifications(res.data);
       } catch (err) {
-        console.error("Error loading data:", err);
+        console.error("Error loading qualifications:", err);
       }
     };
-    fetchData();
+    fetchQualifications();
   }, []);
 
   // Search functionality
   useEffect(() => {
-    const filtered = designations.filter(desig =>
-      desig.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      desig.department.toLowerCase().includes(searchTerm.toLowerCase())
+    const filtered = qualifications.filter(qual =>
+      qual.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
-    setFilteredDesignations(filtered);
+    setFilteredQualifications(filtered);
     setCurrentPage(1);
-  }, [searchTerm, designations]);
+  }, [searchTerm, qualifications]);
 
   const [editingId, setEditingId] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showEmployees, setShowEmployees] = useState(null);
+  const [showHolders, setShowHolders] = useState(null);
   const [formData, setFormData] = useState({
-    department: '',
-    title: '',
+    name: '',
     status: 1,
     isDefault: false,
     order: 0
@@ -56,10 +49,10 @@ const DesignationList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [recordsPerPage, setRecordsPerPage] = useState(20);
 
-  const totalPages = Math.ceil(filteredDesignations.length / recordsPerPage);
+  const totalPages = Math.ceil(filteredQualifications.length / recordsPerPage);
   const indexOfLast = currentPage * recordsPerPage;
   const indexOfFirst = indexOfLast - recordsPerPage;
-  const paginatedData = filteredDesignations.slice(indexOfFirst, indexOfLast);
+  const paginatedData = filteredQualifications.slice(indexOfFirst, indexOfLast);
 
   const handleChange = (e) => {
     const { name, type, value, checked } = e.target;
@@ -70,24 +63,22 @@ const DesignationList = () => {
   };
 
   const handleAdd = async () => {
-    if (!formData.department || !formData.title) {
+    if (!formData.name) {
       alert('Please fill all required fields!');
       return;
     }
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/designations`, {
-        department: formData.department,
-        title: formData.title,
+      const res = await axios.post(`${API_BASE_URL}/qualifications`, {
+        name: formData.name,
         status: formData.status ? 1 : 0,
         isDefault: formData.isDefault,
         order: formData.order
       });
 
-      setDesignations([...designations, res.data]);
+      setQualifications([...qualifications, res.data]);
       setFormData({
-        department: '',
-        title: '',
+        name: '',
         status: 1,
         isDefault: false,
         order: 0
@@ -95,68 +86,65 @@ const DesignationList = () => {
       setShowAddForm(false);
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || "Failed to save designation!");
+      alert(err.response?.data?.error || "Failed to save qualification!");
     }
   };
 
-  const handleEdit = (designation) => {
-    setEditingId(designation._id);
+  const handleEdit = (qualification) => {
+    setEditingId(qualification._id);
     setFormData({
-      department: designation.department,
-      title: designation.title,
-      status: designation.status,
-      isDefault: designation.isDefault,
-      order: designation.order
+      name: qualification.name,
+      status: qualification.status,
+      isDefault: qualification.isDefault,
+      order: qualification.order
     });
   };
 
   const handleSave = async () => {
     try {
       const res = await axios.put(
-        `${API_BASE_URL}/designations/${editingId}`,
+        `${API_BASE_URL}/qualifications/${editingId}`,
         {
-          department: formData.department,
-          title: formData.title,
+          name: formData.name,
           status: formData.status ? 1 : 0,
           isDefault: formData.isDefault,
           order: formData.order
         }
       );
 
-      setDesignations(prev =>
-        prev.map(d => d._id === editingId ? res.data : d)
+      setQualifications(prev =>
+        prev.map(q => q._id === editingId ? res.data : q)
       );
       setEditingId(null);
       setFormData({
-        department: '',
-        title: '',
+        name: '',
         status: 1,
         isDefault: false,
         order: 0
       });
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || "Error updating designation");
+      alert(err.response?.data?.error || "Error updating qualification");
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this designation?')) return;
+    if (!window.confirm('Are you sure you want to delete this qualification?')) return;
 
     try {
-      await axios.delete(`${API_BASE_URL}/designations/${id}`);
-      setDesignations(designations.filter(d => d._id !== id));
+      await axios.delete(`${API_BASE_URL}/qualifications/${id}`);
+      setQualifications(qualifications.filter(q => q._id !== id));
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || "Failed to delete designation");
+      alert(err.response?.data?.error || "Failed to delete qualification");
     }
   };
 
   const handleToggleStatus = async (id) => {
     try {
-      const res = await axios.patch(`${API_BASE_URL}/designations/${id}/toggle-status`);
-      setDesignations(prev =>
-        prev.map(d => d._id === id ? res.data : d)
+      const res = await axios.patch(`${API_BASE_URL}/qualifications/${id}/toggle-status`);
+      setQualifications(prev =>
+        prev.map(q => q._id === id ? res.data : q)
       );
     } catch (err) {
       console.error(err);
@@ -167,8 +155,7 @@ const DesignationList = () => {
   const handleCancelEdit = () => {
     setEditingId(null);
     setFormData({
-      department: '',
-      title: '',
+      name: '',
       status: 1,
       isDefault: false,
       order: 0
@@ -178,8 +165,7 @@ const DesignationList = () => {
   const handleCancelAdd = () => {
     setShowAddForm(false);
     setFormData({
-      department: '',
-      title: '',
+      name: '',
       status: 1,
       isDefault: false,
       order: 0
@@ -224,14 +210,14 @@ const DesignationList = () => {
         <div className="mb-8 text-center">
           <div className="flex justify-center items-center gap-3 mb-4">
             <div className="p-3 bg-gradient-to-r from-[#450693] to-[#8C00FF] rounded-2xl">
-              <Briefcase className="text-white" size={32} />
+              <GraduationCap className="text-white" size={32} />
             </div>
           </div>
           <h1 className="text-3xl font-bold bg-gradient-to-r from-[#450693] to-[#8C00FF] bg-clip-text text-transparent">
-            Designation Management
+            Qualification Management
           </h1>
-          <p className="text-gray-600 mt-2">Manage and organize all designations across departments</p>
-        </div>
+          <p className="text-gray-600 mt-2">Manage and organize all educational qualifications in the system</p>
+          </div>
 
         {/* Controls Section */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
@@ -241,7 +227,7 @@ const DesignationList = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
               <input
                 type="text"
-                placeholder="Search designations..."
+                placeholder="Search qualifications..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C00FF] focus:border-transparent"
@@ -274,21 +260,21 @@ const DesignationList = () => {
               className="flex items-center gap-2 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] text-white px-6 py-3 rounded-xl font-semibold hover:opacity-90 transition-opacity"
             >
               <Plus size={20} />
-              Add Designation
+              Add Qualification
             </button>
           </div>
 
           {/* Results Count */}
           <div className="mt-4 text-sm text-gray-600">
-            Showing {filteredDesignations.length} of {designations.length} designations
+            Showing {filteredQualifications.length} of {qualifications.length} qualifications
           </div>
         </div>
 
-        {/* Add Designation Form */}
+        {/* Add Qualification Form */}
         {showAddForm && (
           <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border-2 border-[#8C00FF]">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-[#450693]">Add New Designation</h3>
+              <h3 className="text-lg font-semibold text-[#450693]">Add New Qualification</h3>
               <button
                 onClick={handleCancelAdd}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -298,34 +284,15 @@ const DesignationList = () => {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-end">
-              <div>
+              <div className="lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Department *
-                </label>
-                <select
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C00FF]"
-                >
-                  <option value="">Select Department</option>
-                  {departments.map((dept) => (
-                    <option key={dept._id} value={dept.name}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Designation Title *
+                  Qualification Name *
                 </label>
                 <input
-                  name="title"
-                  value={formData.title}
+                  name="name"
+                  value={formData.name}
                   onChange={handleChange}
-                  placeholder="Enter designation title"
+                  placeholder="Enter qualification name"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C00FF]"
                 />
               </div>
@@ -370,7 +337,7 @@ const DesignationList = () => {
                     Set as Default
                     {hasDefault && !formData.isDefault && (
                       <span className="text-xs text-red-500 block">
-                        {currentDefault?.title} is already set as default
+                        {currentDefault?.name} is already set as default
                       </span>
                     )}
                   </label>
@@ -382,18 +349,18 @@ const DesignationList = () => {
                   onClick={handleAdd}
                   className="flex-1 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] text-white px-4 py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity"
                 >
-                  Add Designation
+                  Add Qualification
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Edit Designation Form */}
+        {/* Edit Qualification Form */}
         {editingId && (
           <div className="bg-white rounded-2xl shadow-lg p-6 mb-6 border-2 border-[#FFC400]">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold text-[#450693]">Edit Designation</h3>
+              <h3 className="text-lg font-semibold text-[#450693]">Edit Qualification</h3>
               <button
                 onClick={handleCancelEdit}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -403,34 +370,15 @@ const DesignationList = () => {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-end">
-              <div>
+              <div className="lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Department *
-                </label>
-                <select
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C00FF]"
-                >
-                  <option value="">Select Department</option>
-                  {departments.map((dept) => (
-                    <option key={dept._id} value={dept.name}>
-                      {dept.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Designation Title *
+                  Qualification Name *
                 </label>
                 <input
-                  name="title"
-                  value={formData.title}
+                  name="name"
+                  value={formData.name}
                   onChange={handleChange}
-                  placeholder="Enter designation title"
+                  placeholder="Enter qualification name"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C00FF]"
                 />
               </div>
@@ -475,7 +423,7 @@ const DesignationList = () => {
                     Set as Default
                     {hasDefault && !formData.isDefault && currentDefault?._id !== editingId && (
                       <span className="text-xs text-red-500 block">
-                        {currentDefault?.title} is already set as default
+                        {currentDefault?.name} is already set as default
                       </span>
                     )}
                   </label>
@@ -495,7 +443,7 @@ const DesignationList = () => {
           </div>
         )}
 
-        {/* Designations Table */}
+        {/* Qualifications Table */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -503,19 +451,18 @@ const DesignationList = () => {
                 <tr className="bg-gradient-to-r from-[#450693] to-[#8C00FF] text-white">
                   <th className="p-4 text-left font-semibold">#</th>
                   <th className="p-4 text-left font-semibold">Order</th>
-                  <th className="p-4 text-left font-semibold">Department</th>
-                  <th className="p-4 text-left font-semibold">Designation</th>
+                  <th className="p-4 text-left font-semibold">Qualification</th>
                   <th className="p-4 text-center font-semibold">Status</th>
                   <th className="p-4 text-center font-semibold">Default</th>
-                  <th className="p-4 text-center font-semibold">Employees</th>
+                  <th className="p-4 text-center font-semibold">Holders</th>
                   <th className="p-4 text-center font-semibold">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {paginatedData.map((desig, index) => (
-                  <React.Fragment key={desig._id}>
+                {paginatedData.map((qual, index) => (
+                  <React.Fragment key={qual._id}>
                     <tr className={`border-b hover:bg-gray-50 transition-colors ${
-                      desig.isDefault ? 'bg-yellow-50 border-l-4 border-l-yellow-400' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50')
+                      qual.isDefault ? 'bg-yellow-50 border-l-4 border-l-yellow-400' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50')
                     }`}>
                       {/* Serial Number */}
                       <td className="p-4 font-medium">
@@ -525,20 +472,15 @@ const DesignationList = () => {
                       {/* Order */}
                       <td className="p-4">
                         <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                          {desig.order}
+                          {qual.order}
                         </span>
                       </td>
 
-                      {/* Department */}
-                      <td className="p-4">
-                        <div className="font-medium text-gray-900">{desig.department}</div>
-                      </td>
-
-                      {/* Designation Title */}
+                      {/* Qualification Name */}
                       <td className="p-4">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium text-gray-900">{desig.title}</span>
-                          {desig.isDefault && (
+                          <span className="font-medium text-gray-900">{qual.name}</span>
+                          {qual.isDefault && (
                             <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-medium">
                               ⭐ Default
                             </span>
@@ -548,12 +490,12 @@ const DesignationList = () => {
 
                       {/* Status */}
                       <td className="p-4 text-center">
-                        {getStatusBadge(desig.status)}
+                        {getStatusBadge(qual.status)}
                       </td>
 
                       {/* Default */}
                       <td className="p-4 text-center">
-                        {desig.isDefault ? (
+                        {qual.isDefault ? (
                           <span className="inline-flex items-center gap-1 text-yellow-600 font-medium">
                             <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
                             Yes
@@ -563,12 +505,12 @@ const DesignationList = () => {
                         )}
                       </td>
 
-                      {/* Employees */}
+                      {/* Holders */}
                       <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <Users size={16} className="text-blue-500" />
                           <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
-                            {desig.employees?.length || 0}
+                            {qual.holders?.length || 0}
                           </span>
                         </div>
                       </td>
@@ -577,35 +519,35 @@ const DesignationList = () => {
                       <td className="p-4 text-center">
                         <div className="flex justify-center gap-2">
                           <button
-                            onClick={() => setShowEmployees(showEmployees === desig._id ? null : desig._id)}
+                            onClick={() => setShowHolders(showHolders === qual._id ? null : qual._id)}
                             className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-                            title="View Employees"
+                            title="View Holders"
                           >
                             <Eye size={16} />
                           </button>
                           <button
-                            onClick={() => handleEdit(desig)}
+                            onClick={() => handleEdit(qual)}
                             className="flex items-center gap-1 bg-[#FFC400] text-white px-3 py-2 rounded-lg hover:bg-[#E6B000] transition-colors"
                             title="Edit"
                           >
                             <Edit size={16} />
                           </button>
                           <button
-                            onClick={() => handleToggleStatus(desig._id)}
+                            onClick={() => handleToggleStatus(qual._id)}
                             className={`flex items-center gap-1 px-3 py-2 rounded-lg text-white transition-colors ${
-                              desig.status === 1
+                              qual.status === 1
                                 ? 'bg-gray-500 hover:bg-gray-600'
                                 : 'bg-green-500 hover:bg-green-600'
                             }`}
-                            title={desig.status === 1 ? 'Deactivate' : 'Activate'}
+                            title={qual.status === 1 ? 'Deactivate' : 'Activate'}
                           >
-                            {desig.status === 1 ? 'Deactivate' : 'Activate'}
+                            {qual.status === 1 ? 'Deactivate' : 'Activate'}
                           </button>
                           <button
-                            onClick={() => handleDelete(desig._id)}
+                            onClick={() => handleDelete(qual._id)}
                             className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-colors"
                             title="Delete"
-                            disabled={desig.employees?.length > 0 || desig.isDefault}
+                            disabled={qual.holders?.length > 0 || qual.isDefault}
                           >
                             <Trash2 size={16} />
                           </button>
@@ -613,42 +555,42 @@ const DesignationList = () => {
                       </td>
                     </tr>
 
-                    {/* 👥 Employee List (View) */}
-                    {showEmployees === desig._id && (
+                    {/* 👥 Holders List (View) */}
+                    {showHolders === qual._id && (
                       <tr>
-                        <td colSpan="8" className="p-6 bg-gradient-to-r from-purple-50 to-pink-50">
+                        <td colSpan="7" className="p-6 bg-gradient-to-r from-purple-50 to-pink-50">
                           <div className="flex justify-between items-start mb-4">
                             <h4 className="font-semibold text-[#450693]">
-                              Employees with {desig.title} designation in {desig.department}
-                              {desig.isDefault && (
-                                <span className="ml-2 text-yellow-600 text-sm">⭐ Default Designation</span>
+                              People with {qual.name} qualification
+                              {qual.isDefault && (
+                                <span className="ml-2 text-yellow-600 text-sm">⭐ Default Qualification</span>
                               )}
                             </h4>
                             <button
-                              onClick={() => setShowEmployees(null)}
+                              onClick={() => setShowHolders(null)}
                               className="text-gray-400 hover:text-gray-600 transition-colors"
                             >
                               <X size={20} />
                             </button>
                           </div>
-                          {desig.employees?.length > 0 ? (
+                          {qual.holders?.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                              {desig.employees.map((emp, i) => (
+                              {qual.holders.map((holder, i) => (
                                 <div
                                   key={i}
                                   className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center gap-3"
                                 >
                                   <div className="w-8 h-8 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] rounded-full flex items-center justify-center text-white text-sm font-medium">
-                                    {emp.charAt(0)}
+                                    {holder.charAt(0)}
                                   </div>
-                                  <span className="font-medium text-gray-900">{emp}</span>
+                                  <span className="font-medium text-gray-900">{holder}</span>
                                 </div>
                               ))}
                             </div>
                           ) : (
                             <div className="text-center py-8 text-gray-500">
                               <Users size={48} className="mx-auto mb-3 text-gray-300" />
-                              No employees with this designation.
+                              No people with this qualification.
                             </div>
                           )}
                         </td>
@@ -661,16 +603,16 @@ const DesignationList = () => {
 
             {paginatedData.length === 0 && (
               <div className="text-center py-12 text-gray-500">
-                {searchTerm ? 'No designations found matching your search.' : 'No designations available.'}
+                {searchTerm ? 'No qualifications found matching your search.' : 'No qualifications available.'}
               </div>
             )}
           </div>
 
           {/* Enhanced Pagination */}
-          {filteredDesignations.length > 0 && (
+          {filteredQualifications.length > 0 && (
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-6 border-t border-gray-200">
               <div className="text-sm text-gray-600">
-                Showing {indexOfFirst + 1} to {Math.min(indexOfLast, filteredDesignations.length)} of {filteredDesignations.length} entries
+                Showing {indexOfFirst + 1} to {Math.min(indexOfLast, filteredQualifications.length)} of {filteredQualifications.length} entries
               </div>
               
               <div className="flex items-center gap-2">
@@ -735,4 +677,4 @@ const DesignationList = () => {
   );
 };
 
-export default DesignationList;
+export default QualificationList;

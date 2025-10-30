@@ -1,5 +1,4 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import EmployeeList from './pages/employee/Employees.jsx';
 import DepartmentList from './pages/department/Departments.jsx';
 import DocumentsList from './pages/documents/Documents.jsx';
 import VisaTypeList from './pages/visa-types/VisaTypes.jsx';
@@ -16,7 +15,9 @@ import ForgotPassword from './pages/auth/ForgotPassword.jsx';
 import ResetPassword from './pages/auth/ResetPassword.jsx';
 import Settings from './pages/settings/Settings.jsx';
 import NationalityList from './pages/nationalities/NationalityList.jsx';
-import EducationList from './pages/educations/EducationList.jsx';
+import EmployeeList from './pages/employee/Employees.jsx';
+import EmployeeStatus from './pages/employeeStatus/employeeStatus.jsx';
+import QualificationList from './pages/qualifications/QualificationsList.jsx';
 
 const App = () => {
 
@@ -26,7 +27,6 @@ const App = () => {
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/settings" element={<Settings />} />
           
           {/* Dashboard & nested routes - no protection */}
           <Route path="/dashboard" element={<Layout />}>
@@ -41,7 +41,9 @@ const App = () => {
             <Route path="desginations" element={<DesignationList />} />
             <Route path="titles" element={<TitlesList />} />
             <Route path="nationalities" element={<NationalityList />} />
-            <Route path="qualifications" element={<EducationList />} />
+            <Route path="qualifications" element={<QualificationList />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="status" element={<EmployeeStatus />} />
           </Route>
     
           {/* Default redirect */}

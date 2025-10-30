@@ -3,12 +3,11 @@ import Header from './Header';
 import Footer from './Footer';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { isAuthenticated, logout, getCurrentUser } from '../../utils/auth';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 const Layout = () => {
-  
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  // const user = getCurrentUser();
 
   useEffect(() => {
     if (!isAuthenticated()) {
@@ -18,6 +17,11 @@ const Layout = () => {
 
   const handleLogout = () => {
     logout();
+    navigate('/login');
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
   };
 
   if (!isAuthenticated()) {
@@ -26,10 +30,15 @@ const Layout = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      <Header handleLogout={handleLogout} />
-      <div className="flex flex-1 min-h-screen">
-        <Sidebar />
-        <main className="flex-1 overflow-auto m-6">
+      <Header 
+        handleLogout={handleLogout} 
+        onMenuToggle={toggleSidebar}
+        // userName={getCurrentUser()?.name || "Admin User"}
+        // userRole={getCurrentUser()?.role || "Administrator"}
+      />
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
+        <main className="flex-1 overflow-auto bg-gray-50 p-6">
           <Outlet />
         </main>
       </div>

@@ -1,47 +1,56 @@
-import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useEffect, useState } from "react";
 import {
-  Menu, X,
-  LayoutDashboard, Users, FolderOpen, FileText, UserPlus,
-  Database, Briefcase, GraduationCap, Globe, Building, MapPin,
-  BarChart3, Calendar, Settings, ChevronDown, ChevronRight
+  LayoutDashboard, Users,
+  Database, Settings, ChevronDown, ChevronRight
 } from "lucide-react";
 
-export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(false);
+export default function Sidebar({ isOpen, setIsOpen }) {
   const [openMenu, setOpenMenu] = useState(null);
   const location = useLocation();
+
+  // Close sidebar on mobile when route changes
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname, setIsOpen]);
 
   const handleToggleMenu = (menu) => {
     setOpenMenu(openMenu === menu ? null : menu);
   };
 
   const isActive = (path) => location.pathname === path;
+  
+  const isMenuActive = (menuRoutes) =>
+    menuRoutes.some(route => location.pathname.startsWith(route));
+
+  const menuRoutes = {
+    employee: ["/dashboard/employees", "/dashboard/documents", "/dashboard/employee/residencystatus"],
+    master: [
+      "/dashboard/visatypes", "/dashboard/departments", "/dashboard/desginations",
+      "/dashboard/titles", "/dashboard/countries", "/dashboard/cities",
+      "/dashboard/nationalities", "/dashboard/qualifications"
+    ]
+  };
 
   return (
     <>
-      {/* Mobile Top Bar */}
-      <div className="md:hidden bg-[#450693] text-white flex justify-between items-center p-4 shadow-lg">
-        <button onClick={() => setIsOpen(!isOpen)}>
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-        <span className="font-semibold">EPR System</span>
-      </div>
-
       {/* Sidebar */}
-      <aside className={`
-        fixed md:static top-0 left-0 h-full w-70 bg-[#450693] text-white flex flex-col
-        transform transition-transform duration-300 z-40 shadow-xl
-        ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0
-      `}>
+      <aside
+        className={`
+          fixed md:static top-0 left-0 h-full w-70 bg-[#450693] text-white flex flex-col
+          transform transition-transform duration-300 z-40 shadow-xl
+          ${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0
+        `}
+      >
         <div className="flex-1 p-6 space-y-4 overflow-y-auto">
-
           {/* ----- Dashboard ----- */}
           <Link
             to="/dashboard"
-            onClick={() => setIsOpen(false)}
-            className={`block px-4 py-3 rounded-xl text-base font-medium flex items-center gap-3
-              ${isActive("/dashboard") ? "bg-white text-[#8C00FF] shadow" : "hover:bg-white/10"}
+            className={`block px-4 py-3 rounded-xl text-base font-medium flex items-center gap-3 transition-all duration-200
+              ${isActive("/dashboard") 
+                ? "bg-white text-[#450693] shadow-lg font-semibold" 
+                : "hover:bg-white/10 hover:text-white"
+              }
             `}
           >
             <LayoutDashboard size={20} />
@@ -52,32 +61,57 @@ export default function Sidebar() {
           <div>
             <button
               onClick={() => handleToggleMenu("employee")}
-              className="w-full flex justify-between px-4 py-3 rounded-xl hover:bg-white/10"
+              className={`w-full flex justify-between items-center px-4 py-3 rounded-xl text-base font-medium transition-all duration-200
+                ${isMenuActive(menuRoutes.employee) 
+                  ? "bg-[#FFC400] text-[#450693] font-semibold" 
+                  : "hover:bg-white/10 hover:text-white"
+                }
+              `}
             >
-              <span className="flex items-center gap-3 font-medium">
-                <Users size={20} /> Employee
+              <span className="flex items-center gap-3">
+                <Users size={20} /> 
+                Employee
               </span>
-              {openMenu === "employee"
-                ? <ChevronDown size={18} />
-                : <ChevronRight size={18} />
-              }
+              {openMenu === "employee" ? (
+                <ChevronDown size={18} />
+              ) : (
+                <ChevronRight size={18} />
+              )}
             </button>
 
             {openMenu === "employee" && (
-              <div className="ml-6 mt-2 space-y-2 border-l border-white/30 pl-4">
-                <Link to="/dashboard/employees"
-                  onClick={() => setIsOpen(false)}
-                  className={`block p-2 rounded hover:bg-white/10 ${isActive("/dashboard/employees") && "bg-white text-[#8C00FF]"}`}>
+              <div className="ml-6 mt-2 space-y-2 border-l-2 border-[#8C00FF] pl-4">
+                <Link 
+                  to="/dashboard/employees"
+                  className={`block px-3 py-2 rounded-lg text-sm transition-all duration-200
+                    ${isActive("/dashboard/employees") 
+                      ? "bg-white text-[#450693] font-medium shadow" 
+                      : "hover:bg-white/10 hover:text-white"
+                    }
+                  `}
+                >
                   Add Employee
                 </Link>
-                <Link to="/dashboard/documents"
-                  onClick={() => setIsOpen(false)}
-                  className={`block p-2 rounded hover:bg-white/10 ${isActive("/dashboard/documents") && "bg-white text-[#8C00FF]"}`}>
+                <Link 
+                  to="/dashboard/documents"
+                  className={`block px-3 py-2 rounded-lg text-sm transition-all duration-200
+                    ${isActive("/dashboard/documents") 
+                      ? "bg-white text-[#450693] font-medium shadow" 
+                      : "hover:bg-white/10 hover:text-white"
+                    }
+                  `}
+                >
                   Documents
                 </Link>
-                <Link to="/dashboard/employee/residencystatus"
-                  onClick={() => setIsOpen(false)}
-                  className={`block p-2 rounded hover:bg-white/10 ${isActive("/dashboard/employee/residencystatus") && "bg-white text-[#8C00FF]"}`}>
+                <Link 
+                  to="/dashboard/employee/residencystatus"
+                  className={`block px-3 py-2 rounded-lg text-sm transition-all duration-200
+                    ${isActive("/dashboard/employee/residencystatus") 
+                      ? "bg-white text-[#450693] font-medium shadow" 
+                      : "hover:bg-white/10 hover:text-white"
+                    }
+                  `}
+                >
                   Residency
                 </Link>
               </div>
@@ -88,73 +122,80 @@ export default function Sidebar() {
           <div>
             <button
               onClick={() => handleToggleMenu("master")}
-              className="w-full flex justify-between px-4 py-3 rounded-xl hover:bg-white/10"
+              className={`w-full flex justify-between items-center px-4 py-3 rounded-xl text-base font-medium transition-all duration-200
+                ${isMenuActive(menuRoutes.master) 
+                  ? "bg-[#FFC400] text-[#450693] font-semibold" 
+                  : "hover:bg-white/10 hover:text-white"
+                }
+              `}
             >
-              <span className="flex items-center gap-3 font-medium">
-                <Database size={20} /> Master Data
+              <span className="flex items-center gap-3">
+                <Database size={20} /> 
+                Master Data
               </span>
-              {openMenu === "master"
-                ? <ChevronDown size={18} />
-                : <ChevronRight size={18} />
-              }
+              {openMenu === "master" ? (
+                <ChevronDown size={18} />
+              ) : (
+                <ChevronRight size={18} />
+              )}
             </button>
 
             {openMenu === "master" && (
-              <div className="ml-6 mt-2 space-y-2 border-l border-white/30 pl-4">
-                <Link to="/dashboard/visatypes" className="block py-2 rounded hover:bg-white/10">Visa Types</Link>
-                <Link to="/dashboard/departments" className="block py-2 rounded hover:bg-white/10">Departments</Link>
-                <Link to="/dashboard/desginations" className="block py-2 rounded hover:bg-white/10">Designations</Link>
-                <Link to="/dashboard/titles" className="block py-2 rounded hover:bg-white/10">Titles</Link>
-                <Link to="/dashboard/countries" className="block py-2 rounded hover:bg-white/10">Countries</Link>
-                <Link to="/dashboard/cities" className="block py-2 rounded hover:bg-white/10">Cities</Link>
-                <Link to="/dashboard/nationalities" className="block py-2 rounded hover:bg-white/10">Nationalities</Link>
-                <Link to="/dashboard/qualifications" className="block py-2 rounded hover:bg-white/10">Qualifications</Link>
+              <div className="ml-6 mt-2 space-y-2 border-l-2 border-[#8C00FF] pl-4">
+                {[
+                  { path: "/dashboard/visatypes", label: "Visa Types" },
+                  { path: "/dashboard/departments", label: "Departments" },
+                  { path: "/dashboard/desginations", label: "Designations" },
+                  { path: "/dashboard/titles", label: "Titles" },
+                  { path: "/dashboard/countries", label: "Countries" },
+                  { path: "/dashboard/cities", label: "Cities" },
+                  { path: "/dashboard/nationalities", label: "Nationalities" },
+                  { path: "/dashboard/qualifications", label: "Qualifications" },
+                  { path: "/dashboard/status", label: "Status" },
+                ].map((item) => (
+                  <Link
+                    key={item.path}
+                    to={item.path}
+                    className={`block px-3 py-2 rounded-lg text-sm transition-all duration-200
+                      ${isActive(item.path)
+                        ? "bg-white text-[#450693] font-medium shadow"
+                        : "hover:bg-white/10 hover:text-white"
+                      }
+                    `}
+                  >
+                    {item.label}
+                  </Link>
+                ))}
               </div>
             )}
           </div>
 
-          {/* ----- Reports ----- */}
-          {/* <div>
-            <button
-              onClick={() => handleToggleMenu("reports")}
-              className="w-full flex justify-between px-4 py-3 rounded-xl hover:bg-white/10"
-            >
-              <span className="flex items-center gap-3 font-medium">
-                <BarChart3 size={20} /> Reports
-              </span>
-              {openMenu === "reports"
-                ? <ChevronDown size={18} />
-                : <ChevronRight size={18} />
-              }
-            </button>
-
-            {openMenu === "reports" && (
-              <div className="ml-6 mt-2 space-y-2 border-l border-white/30 pl-4">
-                <Link to="/dashboard/reports/summary" className="block py-2 rounded hover:bg-white/10">Summary Report</Link>
-                <Link to="/dashboard/reports/expiry" className="block py-2 rounded hover:bg-white/10">Expiry Report</Link>
-              </div>
-            )}
-          </div> */}
-
           {/* ----- Settings ----- */}
           <Link
             to="/settings"
-            onClick={() => setIsOpen(false)}
-            className={`block px-4 py-3 rounded-xl flex items-center gap-3 font-medium
-              ${isActive("/settings") ? "bg-white text-[#8C00FF]" : "hover:bg-white/10"}
+            className={`block px-4 py-3 rounded-xl text-base font-medium flex items-center gap-3 transition-all duration-200
+              ${isActive("/settings") 
+                ? "bg-white text-[#450693] shadow-lg font-semibold" 
+                : "hover:bg-white/10 hover:text-white"
+              }
             `}
           >
-            <Settings size={20} /> Settings
+            <Settings size={20} /> 
+            Settings
           </Link>
-
         </div>
 
-        <div className="p-4 text-center text-xs opacity-70">v1.0.0 • EPR System</div>
+        <div className="p-4 text-center text-xs opacity-70 border-t border-white/20">
+          v1.0.0 • EPR System
+        </div>
       </aside>
 
       {/* Overlay for mobile */}
       {isOpen && (
-        <div onClick={() => setIsOpen(false)} className="fixed inset-0 bg-black/50 md:hidden"></div>
+        <div 
+          onClick={() => setIsOpen(false)} 
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+        ></div>
       )}
     </>
   );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, Trash2, Plus, Search, Save, X, ChevronLeft, ChevronRight, User, Award } from 'lucide-react';
+import { Edit, Trash2, Plus, Search, Save, X, ChevronLeft, ChevronRight, User, Award, Users, Eye } from 'lucide-react';
 import axios from 'axios';
 
 const TitlesList = () => {
@@ -7,6 +7,10 @@ const TitlesList = () => {
   const [filteredTitles, setFilteredTitles] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
+  // Check if there's already a default title
+  const hasDefault = titles.some(title => title.isDefault);
+  const currentDefault = titles.find(title => title.isDefault);
 
   // Fetch titles from backend
   useEffect(() => {
@@ -33,19 +37,22 @@ const TitlesList = () => {
 
   const [editingId, setEditingId] = useState(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showEmployees, setShowEmployees] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
-    isActive: true,
+    status: 1,
     isDefault: false,
+    order: 0
   });
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 20;
 
-  const totalPages = Math.ceil(filteredTitles.length / pageSize);
-  const paginatedData = filteredTitles.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [recordsPerPage, setRecordsPerPage] = useState(20);
+
+  const totalPages = Math.ceil(filteredTitles.length / recordsPerPage);
+  const indexOfLast = currentPage * recordsPerPage;
+  const indexOfFirst = indexOfLast - recordsPerPage;
+  const paginatedData = filteredTitles.slice(indexOfFirst, indexOfLast);
 
   const handleChange = (e) => {
     const { name, type, checked, value } = e.target;
@@ -64,12 +71,13 @@ const TitlesList = () => {
     try {
       const res = await axios.post(`${API_BASE_URL}/titles`, {
         title: formData.title,
-        isActive: formData.isActive,
+        status: formData.status ? 1 : 0,
         isDefault: formData.isDefault,
+        order: formData.order
       });
 
       setTitles([...titles, res.data]);
-      setFormData({ title: '', isActive: true, isDefault: false });
+      setFormData({ title: '', status: 1, isDefault: false, order: 0 });
       setShowAddForm(false);
     } catch (err) {
       console.error(err);
@@ -81,8 +89,9 @@ const TitlesList = () => {
     setEditingId(title._id);
     setFormData({
       title: title.title,
-      isActive: title.isActive,
+      status: title.status,
       isDefault: title.isDefault,
+      order: title.order
     });
   };
 
@@ -92,8 +101,9 @@ const TitlesList = () => {
         `${API_BASE_URL}/titles/${editingId}`,
         {
           title: formData.title,
-          isActive: formData.isActive,
+          status: formData.status ? 1 : 0,
           isDefault: formData.isDefault,
+          order: formData.order
         }
       );
 
@@ -101,7 +111,7 @@ const TitlesList = () => {
         prev.map(t => t._id === editingId ? res.data : t)
       );
       setEditingId(null);
-      setFormData({ title: '', isActive: true, isDefault: false });
+      setFormData({ title: '', status: 1, isDefault: false, order: 0 });
     } catch (err) {
       console.error(err);
       alert(err.response?.data?.error || "Error updating title");
@@ -134,16 +144,16 @@ const TitlesList = () => {
 
   const handleCancelEdit = () => {
     setEditingId(null);
-    setFormData({ title: '', isActive: true, isDefault: false });
+    setFormData({ title: '', status: 1, isDefault: false, order: 0 });
   };
 
   const handleCancelAdd = () => {
     setShowAddForm(false);
-    setFormData({ title: '', isActive: true, isDefault: false });
+    setFormData({ title: '', status: 1, isDefault: false, order: 0 });
   };
 
-  const getStatusBadge = (isActive) => {
-    return isActive ? (
+  const getStatusBadge = (status) => {
+    return status === 1 ? (
       <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
         Active
       </span>
@@ -154,12 +164,23 @@ const TitlesList = () => {
     );
   };
 
-  const getDefaultBadge = (isDefault) => {
-    return isDefault ? (
-      <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
-        Default
-      </span>
-    ) : null;
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+    
+    if (endPage - startPage + 1 < maxPagesToShow) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+    
+    return pageNumbers;
   };
 
   return (
@@ -193,6 +214,26 @@ const TitlesList = () => {
               />
             </div>
 
+            {/* Records Per Page Selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Show:</span>
+              <select
+                value={recordsPerPage}
+                onChange={(e) => {
+                  setRecordsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={40}>40</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <span className="text-sm text-gray-600">entries</span>
+            </div>
+
             {/* Add Button */}
             <button
               onClick={() => setShowAddForm(true)}
@@ -222,10 +263,10 @@ const TitlesList = () => {
               </button>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-end">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-end">
               <div className="lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Title
+                  Title *
                 </label>
                 <input
                   name="title"
@@ -236,12 +277,27 @@ const TitlesList = () => {
                 />
               </div>
 
-              <div className="flex items-center gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Display Order
+                </label>
+                <input
+                  type="number"
+                  name="order"
+                  min="0"
+                  value={formData.order}
+                  onChange={handleChange}
+                  placeholder="Order"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C00FF]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    name="isActive"
-                    checked={formData.isActive}
+                    name="status"
+                    checked={formData.status}
                     onChange={handleChange}
                     className="h-5 w-5 accent-[#8C00FF] cursor-pointer"
                   />
@@ -255,8 +311,16 @@ const TitlesList = () => {
                     checked={formData.isDefault}
                     onChange={handleChange}
                     className="h-5 w-5 accent-[#8C00FF] cursor-pointer"
+                    disabled={hasDefault && !formData.isDefault}
                   />
-                  <label className="text-sm font-medium text-gray-700">Default</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Set as Default
+                    {hasDefault && !formData.isDefault && (
+                      <span className="text-xs text-red-500 block">
+                        {currentDefault?.title} is already set as default
+                      </span>
+                    )}
+                  </label>
                 </div>
               </div>
 
@@ -285,10 +349,10 @@ const TitlesList = () => {
               </button>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-end">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-end">
               <div className="lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Title
+                  Title *
                 </label>
                 <input
                   name="title"
@@ -299,12 +363,27 @@ const TitlesList = () => {
                 />
               </div>
 
-              <div className="flex items-center gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Display Order
+                </label>
+                <input
+                  type="number"
+                  name="order"
+                  min="0"
+                  value={formData.order}
+                  onChange={handleChange}
+                  placeholder="Order"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C00FF]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    name="isActive"
-                    checked={formData.isActive}
+                    name="status"
+                    checked={formData.status}
                     onChange={handleChange}
                     className="h-5 w-5 accent-[#8C00FF] cursor-pointer"
                   />
@@ -318,8 +397,16 @@ const TitlesList = () => {
                     checked={formData.isDefault}
                     onChange={handleChange}
                     className="h-5 w-5 accent-[#8C00FF] cursor-pointer"
+                    disabled={hasDefault && !formData.isDefault && currentDefault?._id !== editingId}
                   />
-                  <label className="text-sm font-medium text-gray-700">Default</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Set as Default
+                    {hasDefault && !formData.isDefault && currentDefault?._id !== editingId && (
+                      <span className="text-xs text-red-500 block">
+                        {currentDefault?.title} is already set as default
+                      </span>
+                    )}
+                  </label>
                 </div>
               </div>
 
@@ -343,7 +430,9 @@ const TitlesList = () => {
               <thead>
                 <tr className="bg-gradient-to-r from-[#450693] to-[#8C00FF] text-white">
                   <th className="p-4 text-left font-semibold">#</th>
+                  <th className="p-4 text-left font-semibold">Order</th>
                   <th className="p-4 text-left font-semibold">Title</th>
+                  <th className="p-4 text-center font-semibold">Employees</th>
                   <th className="p-4 text-center font-semibold">Status</th>
                   <th className="p-4 text-center font-semibold">Default</th>
                   <th className="p-4 text-center font-semibold">Actions</th>
@@ -351,76 +440,148 @@ const TitlesList = () => {
               </thead>
               <tbody>
                 {paginatedData.map((t, index) => (
-                  <tr key={t._id} className={`border-b hover:bg-gray-50 transition-colors ${
-                    index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                  }`}>
-                    <td className="p-4 text-gray-600">
-                      {index + 1 + (currentPage - 1) * pageSize}
-                    </td>
+                  <React.Fragment key={t._id}>
+                    <tr className={`border-b hover:bg-gray-50 transition-colors ${
+                      t.isDefault ? 'bg-yellow-50 border-l-4 border-l-yellow-400' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50')
+                    }`}>
+                      {/* Serial Number */}
+                      <td className="p-4 font-medium">
+                        {indexOfFirst + index + 1}
+                      </td>
 
-                    {/* Title */}
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] rounded-full flex items-center justify-center text-white font-medium">
-                          <User size={16} />
+                      {/* Order */}
+                      <td className="p-4">
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                          {t.order}
+                        </span>
+                      </td>
+
+                      {/* Title */}
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] rounded-full flex items-center justify-center text-white font-medium">
+                            <User size={16} />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-gray-900">{t.title}</span>
+                            {t.isDefault && (
+                              <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                ⭐ Default
+                              </span>
+                            )}
+                          </div>
                         </div>
-                        <div className="font-medium text-gray-900">{t.title}</div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* Status */}
-                    <td className="p-4 text-center">
-                      {getStatusBadge(t.isActive)}
-                    </td>
+                      {/* Employees */}
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <Users size={16} className="text-blue-500" />
+                          <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                            {t.employees?.length || 0}
+                          </span>
+                        </div>
+                      </td>
 
-                    {/* Default */}
-                    <td className="p-4 text-center">
-                      {getDefaultBadge(t.isDefault)}
-                    </td>
+                      {/* Status */}
+                      <td className="p-4 text-center">
+                        {getStatusBadge(t.status)}
+                      </td>
 
-                    {/* Actions */}
-                    <td className="p-4 text-center">
-                      <div className="flex justify-center gap-2">
-                        {editingId === t._id ? (
-                          <button
-                            onClick={handleSave}
-                            className="flex items-center gap-1 bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors"
-                          >
-                            <Save size={16} />
-                            Save
-                          </button>
+                      {/* Default */}
+                      <td className="p-4 text-center">
+                        {t.isDefault ? (
+                          <span className="inline-flex items-center gap-1 text-yellow-600 font-medium">
+                            <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                            Yes
+                          </span>
                         ) : (
-                          <>
-                            <button
-                              onClick={() => handleEdit(t)}
-                              className="flex items-center gap-1 bg-[#FFC400] text-white px-3 py-2 rounded-lg hover:bg-[#E6B000] transition-colors"
-                              title="Edit"
-                            >
-                              <Edit size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleToggleStatus(t._id)}
-                              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-white transition-colors ${
-                                t.isActive
-                                  ? 'bg-gray-500 hover:bg-gray-600'
-                                  : 'bg-green-500 hover:bg-green-600'
-                              }`}
-                              title={t.isActive ? 'Deactivate' : 'Activate'}
-                            >
-                              {t.isActive ? 'Deactivate' : 'Activate'}
-                            </button>
-                            <button
-                              onClick={() => handleDelete(t._id)}
-                              className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-colors"
-                              title="Delete"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </>
+                          <span className="text-gray-400">No</span>
                         )}
-                      </div>
-                    </td>
-                  </tr>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="p-4 text-center">
+                        <div className="flex justify-center gap-2">
+                          <button
+                            onClick={() => setShowEmployees(showEmployees === t._id ? null : t._id)}
+                            className="flex items-center gap-1 bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                            title="View Employees"
+                          >
+                            <Eye size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(t)}
+                            className="flex items-center gap-1 bg-[#FFC400] text-white px-3 py-2 rounded-lg hover:bg-[#E6B000] transition-colors"
+                            title="Edit"
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleToggleStatus(t._id)}
+                            className={`flex items-center gap-1 px-3 py-2 rounded-lg text-white transition-colors ${
+                              t.status === 1
+                                ? 'bg-gray-500 hover:bg-gray-600'
+                                : 'bg-green-500 hover:bg-green-600'
+                            }`}
+                            title={t.status === 1 ? 'Deactivate' : 'Activate'}
+                          >
+                            {t.status === 1 ? 'Deactivate' : 'Activate'}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(t._id)}
+                            className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-colors"
+                            title="Delete"
+                            disabled={t.employees?.length > 0 || t.isDefault}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* 👥 Employee List (View) */}
+                    {showEmployees === t._id && (
+                      <tr>
+                        <td colSpan="7" className="p-6 bg-gradient-to-r from-purple-50 to-pink-50">
+                          <div className="flex justify-between items-start mb-4">
+                            <h4 className="font-semibold text-[#450693]">
+                              Employees with {t.title} title
+                              {t.isDefault && (
+                                <span className="ml-2 text-yellow-600 text-sm">⭐ Default Title</span>
+                              )}
+                            </h4>
+                            <button
+                              onClick={() => setShowEmployees(null)}
+                              className="text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <X size={20} />
+                            </button>
+                          </div>
+                          {t.employees?.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {t.employees.map((emp, i) => (
+                                <div
+                                  key={i}
+                                  className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center gap-3"
+                                >
+                                  <div className="w-8 h-8 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] rounded-full flex items-center justify-center text-white text-sm font-medium">
+                                    {emp.charAt(0)}
+                                  </div>
+                                  <span className="font-medium text-gray-900">{emp}</span>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 text-gray-500">
+                              <Users size={48} className="mx-auto mb-3 text-gray-300" />
+                              No employees with this title.
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
@@ -432,31 +593,65 @@ const TitlesList = () => {
             )}
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
+          {/* Enhanced Pagination */}
+          {filteredTitles.length > 0 && (
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-6 border-t border-gray-200">
               <div className="text-sm text-gray-600">
-                Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, filteredTitles.length)} of {filteredTitles.length} entries
+                Showing {indexOfFirst + 1} to {Math.min(indexOfLast, filteredTitles.length)} of {filteredTitles.length} entries
               </div>
+              
               <div className="flex items-center gap-2">
+                {/* First Page */}
                 <button
                   disabled={currentPage === 1}
-                  onClick={() => setCurrentPage(p => p - 1)}
+                  onClick={() => setCurrentPage(1)}
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  First
+                </button>
+
+                {/* Previous Page */}
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
                   className="flex items-center gap-1 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronLeft size={16} />
                   Previous
                 </button>
-                <span className="px-4 py-2 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] text-white rounded-lg font-medium">
-                  Page {currentPage} of {totalPages}
-                </span>
+
+                {/* Page Numbers */}
+                {getPageNumbers().map(pageNumber => (
+                  <button
+                    key={pageNumber}
+                    onClick={() => setCurrentPage(pageNumber)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                      currentPage === pageNumber
+                        ? 'bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] text-white'
+                        : 'bg-white border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+
+                {/* Next Page */}
                 <button
                   disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage(p => p + 1)}
+                  onClick={() => setCurrentPage(currentPage + 1)}
                   className="flex items-center gap-1 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Next
                   <ChevronRight size={16} />
+                </button>
+
+                {/* Last Page */}
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(totalPages)}
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Last
                 </button>
               </div>
             </div>

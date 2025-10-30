@@ -8,6 +8,10 @@ const CountryList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
+  // Check if there's already a default country
+  const hasDefault = countries.some(country => country.isDefault);
+  const currentDefault = countries.find(country => country.isDefault);
+
   // Fetch countries from backend
   useEffect(() => {
     const fetchCountries = async () => {
@@ -33,8 +37,9 @@ const CountryList = () => {
 
   const [newCountry, setNewCountry] = useState({
     name: '',
-    isActive: true,
+    status: 1,
     isDefault: false,
+    order: 0
   });
   const [editingCountry, setEditingCountry] = useState(null);
   const [showEmployees, setShowEmployees] = useState(null);
@@ -43,12 +48,31 @@ const CountryList = () => {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 20;
+  const [recordsPerPage, setRecordsPerPage] = useState(20);
 
+  const totalPages = Math.ceil(filteredCountries.length / recordsPerPage);
   const indexOfLast = currentPage * recordsPerPage;
   const indexOfFirst = indexOfLast - recordsPerPage;
   const currentRecords = filteredCountries.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(filteredCountries.length / recordsPerPage);
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+    
+    if (endPage - startPage + 1 < maxPagesToShow) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+    
+    return pageNumbers;
+  };
 
   // ➕ Add Country
   const handleAddCountry = async () => {
@@ -60,12 +84,13 @@ const CountryList = () => {
     try {
       const res = await axios.post(`${API_BASE_URL}/countries`, {
         name: newCountry.name,
-        isActive: newCountry.isActive,
-        isDefault: newCountry.isDefault
+        status: newCountry.status ? 1 : 0,
+        isDefault: newCountry.isDefault,
+        order: newCountry.order
       });
 
       setCountries([...countries, res.data]);
-      setNewCountry({ name: '', isActive: true, isDefault: false });
+      setNewCountry({ name: '', status: 1, isDefault: false, order: 0 });
       setShowAddForm(false);
     } catch (err) {
       console.error(err);
@@ -84,8 +109,9 @@ const CountryList = () => {
         `${API_BASE_URL}/countries/${editingCountry._id}`,
         {
           name: editingCountry.name,
-          isActive: editingCountry.isActive,
-          isDefault: editingCountry.isDefault
+          status: editingCountry.status ? 1 : 0,
+          isDefault: editingCountry.isDefault,
+          order: editingCountry.order
         }
       );
 
@@ -103,7 +129,7 @@ const CountryList = () => {
 
   const handleCancelAdd = () => {
     setShowAddForm(false);
-    setNewCountry({ name: '', isActive: true, isDefault: false });
+    setNewCountry({ name: '', status: 1, isDefault: false, order: 0 });
   };
 
   // 🗑️ Delete Country
@@ -172,8 +198,8 @@ const CountryList = () => {
     }
   };
 
-  const getStatusBadge = (isActive) => {
-    return isActive ? (
+  const getStatusBadge = (status) => {
+    return status === 1 ? (
       <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
         Active
       </span>
@@ -182,14 +208,6 @@ const CountryList = () => {
         Inactive
       </span>
     );
-  };
-
-  const getDefaultBadge = (isDefault) => {
-    return isDefault ? (
-      <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
-        Default
-      </span>
-    ) : null;
   };
 
   return (
@@ -223,6 +241,26 @@ const CountryList = () => {
               />
             </div>
 
+            {/* Records Per Page Selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Show:</span>
+              <select
+                value={recordsPerPage}
+                onChange={(e) => {
+                  setRecordsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={40}>40</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <span className="text-sm text-gray-600">entries</span>
+            </div>
+
             {/* Add Button */}
             <button
               onClick={() => setShowAddForm(true)}
@@ -252,10 +290,10 @@ const CountryList = () => {
               </button>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-end">
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-end">
               <div className="lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Country Name
+                  Country Name *
                 </label>
                 <input
                   type="text"
@@ -268,14 +306,30 @@ const CountryList = () => {
                 />
               </div>
 
-              <div className="flex items-center gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Display Order
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Order"
+                  value={newCountry.order}
+                  onChange={(e) =>
+                    setNewCountry({ ...newCountry, order: parseInt(e.target.value) || 0 })
+                  }
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C00FF]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     className="h-5 w-5 accent-[#8C00FF] cursor-pointer"
-                    checked={newCountry.isActive}
+                    checked={newCountry.status}
                     onChange={(e) =>
-                      setNewCountry({ ...newCountry, isActive: e.target.checked })
+                      setNewCountry({ ...newCountry, status: e.target.checked })
                     }
                   />
                   <label className="text-sm font-medium text-gray-700">Active</label>
@@ -289,8 +343,16 @@ const CountryList = () => {
                     onChange={(e) =>
                       setNewCountry({ ...newCountry, isDefault: e.target.checked })
                     }
+                    disabled={hasDefault && !newCountry.isDefault}
                   />
-                  <label className="text-sm font-medium text-gray-700">Default</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Set as Default
+                    {hasDefault && !newCountry.isDefault && (
+                      <span className="text-xs text-red-500 block">
+                        {currentDefault?.name} is already set as default
+                      </span>
+                    )}
+                  </label>
                 </div>
               </div>
 
@@ -312,6 +374,8 @@ const CountryList = () => {
             <table className="w-full">
               <thead>
                 <tr className="bg-gradient-to-r from-[#450693] to-[#8C00FF] text-white">
+                  <th className="p-4 text-left font-semibold">#</th>
+                  <th className="p-4 text-left font-semibold">Order</th>
                   <th className="p-4 text-left font-semibold">Country</th>
                   <th className="p-4 text-center font-semibold">Status</th>
                   <th className="p-4 text-center font-semibold">Default</th>
@@ -323,15 +387,27 @@ const CountryList = () => {
                 {currentRecords.map((country, index) => (
                   <React.Fragment key={country._id}>
                     <tr className={`border-b hover:bg-gray-50 transition-colors ${
-                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                      country.isDefault ? 'bg-yellow-50 border-l-4 border-l-yellow-400' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50')
                     }`}>
+                      {/* Serial Number */}
+                      <td className="p-4 font-medium">
+                        {indexOfFirst + index + 1}
+                      </td>
+
+                      {/* Order */}
+                      <td className="p-4">
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                          {country.order}
+                        </span>
+                      </td>
+
                       {/* Country Name */}
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] rounded-full flex items-center justify-center text-white">
                             <MapPin size={16} />
                           </div>
-                          <div>
+                          <div className="flex items-center gap-2">
                             {editingCountry?._id === country._id ? (
                               <input
                                 type="text"
@@ -345,7 +421,14 @@ const CountryList = () => {
                                 className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C00FF]"
                               />
                             ) : (
-                              <div className="font-medium text-gray-900">{country.name}</div>
+                              <>
+                                <div className="font-medium text-gray-900">{country.name}</div>
+                                {country.isDefault && (
+                                  <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                    ⭐ Default
+                                  </span>
+                                )}
+                              </>
                             )}
                           </div>
                         </div>
@@ -357,35 +440,28 @@ const CountryList = () => {
                           <input
                             type="checkbox"
                             className="h-5 w-5 accent-[#8C00FF] cursor-pointer"
-                            checked={editingCountry.isActive}
+                            checked={editingCountry.status}
                             onChange={(e) =>
                               setEditingCountry({
                                 ...editingCountry,
-                                isActive: e.target.checked,
+                                status: e.target.checked,
                               })
                             }
                           />
                         ) : (
-                          getStatusBadge(country.isActive)
+                          getStatusBadge(country.status)
                         )}
                       </td>
 
                       {/* Default */}
                       <td className="p-4 text-center">
-                        {editingCountry?._id === country._id ? (
-                          <input
-                            type="checkbox"
-                            className="h-5 w-5 accent-[#8C00FF] cursor-pointer"
-                            checked={editingCountry.isDefault}
-                            onChange={(e) =>
-                              setEditingCountry({
-                                ...editingCountry,
-                                isDefault: e.target.checked,
-                              })
-                            }
-                          />
+                        {country.isDefault ? (
+                          <span className="inline-flex items-center gap-1 text-yellow-600 font-medium">
+                            <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                            Yes
+                          </span>
                         ) : (
-                          getDefaultBadge(country.isDefault)
+                          <span className="text-gray-400">No</span>
                         )}
                       </td>
 
@@ -442,18 +518,19 @@ const CountryList = () => {
                               <button
                                 onClick={() => handleToggleStatus(country._id)}
                                 className={`flex items-center gap-1 px-3 py-2 rounded-lg text-white transition-colors ${
-                                  country.isActive
+                                  country.status === 1
                                     ? 'bg-gray-500 hover:bg-gray-600'
                                     : 'bg-green-500 hover:bg-green-600'
                                 }`}
-                                title={country.isActive ? 'Deactivate' : 'Activate'}
+                                title={country.status === 1 ? 'Deactivate' : 'Activate'}
                               >
-                                {country.isActive ? 'Deactivate' : 'Activate'}
+                                {country.status === 1 ? 'Deactivate' : 'Activate'}
                               </button>
                               <button
                                 onClick={() => handleDelete(country._id)}
                                 className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-colors"
                                 title="Delete"
+                                disabled={country.employees.length > 0 || country.isDefault}
                               >
                                 <Trash2 size={16} />
                               </button>
@@ -466,10 +543,13 @@ const CountryList = () => {
                     {/* 👥 Employees List */}
                     {showEmployees === country._id && (
                       <tr>
-                        <td colSpan="5" className="p-6 bg-gradient-to-r from-purple-50 to-pink-50">
+                        <td colSpan="7" className="p-6 bg-gradient-to-r from-purple-50 to-pink-50">
                           <div className="flex justify-between items-start mb-4">
                             <h4 className="font-semibold text-[#450693]">
                               Employees in {country.name}
+                              {country.isDefault && (
+                                <span className="ml-2 text-yellow-600 text-sm">⭐ Default Country</span>
+                              )}
                             </h4>
                             <button
                               onClick={() => setShowEmployees(null)}
@@ -544,31 +624,65 @@ const CountryList = () => {
             )}
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
+          {/* Enhanced Pagination */}
+          {filteredCountries.length > 0 && (
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-6 border-t border-gray-200">
               <div className="text-sm text-gray-600">
                 Showing {indexOfFirst + 1} to {Math.min(indexOfLast, filteredCountries.length)} of {filteredCountries.length} entries
               </div>
+              
               <div className="flex items-center gap-2">
+                {/* First Page */}
                 <button
                   disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => p - 1)}
+                  onClick={() => setCurrentPage(1)}
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  First
+                </button>
+
+                {/* Previous Page */}
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
                   className="flex items-center gap-1 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronLeft size={16} />
                   Previous
                 </button>
-                <span className="px-4 py-2 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] text-white rounded-lg font-medium">
-                  Page {currentPage} of {totalPages}
-                </span>
+
+                {/* Page Numbers */}
+                {getPageNumbers().map(pageNumber => (
+                  <button
+                    key={pageNumber}
+                    onClick={() => setCurrentPage(pageNumber)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                      currentPage === pageNumber
+                        ? 'bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] text-white'
+                        : 'bg-white border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+
+                {/* Next Page */}
                 <button
                   disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((p) => p + 1)}
+                  onClick={() => setCurrentPage(currentPage + 1)}
                   className="flex items-center gap-1 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Next
                   <ChevronRight size={16} />
+                </button>
+
+                {/* Last Page */}
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(totalPages)}
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Last
                 </button>
               </div>
             </div>

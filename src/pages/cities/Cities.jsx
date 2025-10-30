@@ -9,6 +9,10 @@ const CityList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
+  // Check if there's already a default city
+  const hasDefault = cities.some(city => city.isDefault);
+  const currentDefault = cities.find(city => city.isDefault);
+
   // Fetch cities and countries from backend
   useEffect(() => {
     const fetchData = async () => {
@@ -40,8 +44,9 @@ const CityList = () => {
   const [newCity, setNewCity] = useState({
     name: '',
     countryId: '',
-    isActive: true,
+    status: 1,
     isDefault: false,
+    order: 0
   });
 
   const [editingCity, setEditingCity] = useState(null);
@@ -49,13 +54,33 @@ const CityList = () => {
   const [newEmployee, setNewEmployee] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
 
-  // 📄 Pagination
+  // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const recordsPerPage = 20;
+  const [recordsPerPage, setRecordsPerPage] = useState(20);
+
+  const totalPages = Math.ceil(filteredCities.length / recordsPerPage);
   const indexOfLast = currentPage * recordsPerPage;
   const indexOfFirst = indexOfLast - recordsPerPage;
   const currentRecords = filteredCities.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(filteredCities.length / recordsPerPage);
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+    
+    if (endPage - startPage + 1 < maxPagesToShow) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+    
+    return pageNumbers;
+  };
 
   // ➕ Add City
   const handleAddCity = async () => {
@@ -68,12 +93,13 @@ const CityList = () => {
       const res = await axios.post(`${API_BASE_URL}/cities`, {
         name: newCity.name,
         countryId: newCity.countryId,
-        isActive: newCity.isActive,
-        isDefault: newCity.isDefault
+        status: newCity.status ? 1 : 0,
+        isDefault: newCity.isDefault,
+        order: newCity.order
       });
 
       setCities([...cities, res.data]);
-      setNewCity({ name: '', countryId: '', isActive: true, isDefault: false });
+      setNewCity({ name: '', countryId: '', status: 1, isDefault: false, order: 0 });
       setShowAddForm(false);
     } catch (err) {
       console.error(err);
@@ -91,8 +117,9 @@ const CityList = () => {
         {
           name: editingCity.name,
           countryId: editingCity.countryId,
-          isActive: editingCity.isActive,
-          isDefault: editingCity.isDefault
+          status: editingCity.status ? 1 : 0,
+          isDefault: editingCity.isDefault,
+          order: editingCity.order
         }
       );
 
@@ -110,7 +137,7 @@ const CityList = () => {
 
   const handleCancelAdd = () => {
     setShowAddForm(false);
-    setNewCity({ name: '', countryId: '', isActive: true, isDefault: false });
+    setNewCity({ name: '', countryId: '', status: 1, isDefault: false, order: 0 });
   };
 
   // ❌ Delete City
@@ -179,8 +206,8 @@ const CityList = () => {
     }
   };
 
-  const getStatusBadge = (isActive) => {
-    return isActive ? (
+  const getStatusBadge = (status) => {
+    return status === 1 ? (
       <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
         Active
       </span>
@@ -189,14 +216,6 @@ const CityList = () => {
         Inactive
       </span>
     );
-  };
-
-  const getDefaultBadge = (isDefault) => {
-    return isDefault ? (
-      <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-medium rounded-full">
-        Default
-      </span>
-    ) : null;
   };
 
   return (
@@ -215,6 +234,7 @@ const CityList = () => {
           <p className="text-gray-600 mt-2">Manage cities and their employee assignments across countries</p>
         </div>
 
+
         {/* Controls Section */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
           <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
@@ -228,6 +248,26 @@ const CityList = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8C00FF] focus:border-transparent"
               />
+            </div>
+
+            {/* Records Per Page Selector */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">Show:</span>
+              <select
+                value={recordsPerPage}
+                onChange={(e) => {
+                  setRecordsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={40}>40</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+              <span className="text-sm text-gray-600">entries</span>
             </div>
 
             {/* Add Button */}
@@ -259,10 +299,10 @@ const CityList = () => {
               </button>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-end">
+            <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-end">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  City Name
+                  City Name *
                 </label>
                 <input
                   type="text"
@@ -275,7 +315,7 @@ const CityList = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Country
+                  Country *
                 </label>
                 <select
                   value={newCity.countryId}
@@ -293,13 +333,27 @@ const CityList = () => {
                 </select>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Display Order
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Order"
+                  value={newCity.order}
+                  onChange={(e) => setNewCity({ ...newCity, order: parseInt(e.target.value) || 0 })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C00FF]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    checked={newCity.isActive}
+                    checked={newCity.status}
                     onChange={(e) =>
-                      setNewCity({ ...newCity, isActive: e.target.checked })
+                      setNewCity({ ...newCity, status: e.target.checked })
                     }
                     className="h-5 w-5 accent-[#8C00FF] cursor-pointer"
                   />
@@ -314,8 +368,16 @@ const CityList = () => {
                       setNewCity({ ...newCity, isDefault: e.target.checked })
                     }
                     className="h-5 w-5 accent-[#8C00FF] cursor-pointer"
+                    disabled={hasDefault && !newCity.isDefault}
                   />
-                  <label className="text-sm font-medium text-gray-700">Default</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Set as Default
+                    {hasDefault && !newCity.isDefault && (
+                      <span className="text-xs text-red-500 block">
+                        {currentDefault?.name} is already set as default
+                      </span>
+                    )}
+                  </label>
                 </div>
               </div>
 
@@ -344,10 +406,10 @@ const CityList = () => {
               </button>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-end">
+            <div className="grid grid-cols-1 lg:grid-cols-6 gap-4 items-end">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  City Name
+                  City Name *
                 </label>
                 <input
                   type="text"
@@ -361,7 +423,7 @@ const CityList = () => {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Country
+                  Country *
                 </label>
                 <select
                   value={editingCity.countryId}
@@ -382,15 +444,29 @@ const CityList = () => {
                 </select>
               </div>
 
-              <div className="flex items-center gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Display Order
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Order"
+                  value={editingCity.order}
+                  onChange={(e) => setEditingCity({ ...editingCity, order: parseInt(e.target.value) || 0 })}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8C00FF]"
+                />
+              </div>
+
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
-                    checked={editingCity.isActive}
+                    checked={editingCity.status}
                     onChange={(e) =>
                       setEditingCity({
                         ...editingCity,
-                        isActive: e.target.checked,
+                        status: e.target.checked,
                       })
                     }
                     className="h-5 w-5 accent-[#8C00FF] cursor-pointer"
@@ -409,8 +485,16 @@ const CityList = () => {
                       })
                     }
                     className="h-5 w-5 accent-[#8C00FF] cursor-pointer"
+                    disabled={hasDefault && !editingCity.isDefault && currentDefault?._id !== editingCity._id}
                   />
-                  <label className="text-sm font-medium text-gray-700">Default</label>
+                  <label className="text-sm font-medium text-gray-700">
+                    Set as Default
+                    {hasDefault && !editingCity.isDefault && currentDefault?._id !== editingCity._id && (
+                      <span className="text-xs text-red-500 block">
+                        {currentDefault?.name} is already set as default
+                      </span>
+                    )}
+                  </label>
                 </div>
               </div>
 
@@ -433,6 +517,8 @@ const CityList = () => {
             <table className="w-full">
               <thead>
                 <tr className="bg-gradient-to-r from-[#450693] to-[#8C00FF] text-white">
+                  <th className="p-4 text-left font-semibold">#</th>
+                  <th className="p-4 text-left font-semibold">Order</th>
                   <th className="p-4 text-left font-semibold">City</th>
                   <th className="p-4 text-left font-semibold">Country</th>
                   <th className="p-4 text-center font-semibold">Status</th>
@@ -445,22 +531,41 @@ const CityList = () => {
                 {currentRecords.map((city, index) => (
                   <React.Fragment key={city._id}>
                     <tr className={`border-b hover:bg-gray-50 transition-colors ${
-                      index % 2 === 0 ? 'bg-white' : 'bg-gray-50'
+                      city.isDefault ? 'bg-yellow-50 border-l-4 border-l-yellow-400' : (index % 2 === 0 ? 'bg-white' : 'bg-gray-50')
                     }`}>
+                      {/* Serial Number */}
+                      <td className="p-4 font-medium">
+                        {indexOfFirst + index + 1}
+                      </td>
+
+                      {/* Order */}
+                      <td className="p-4">
+                        <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                          {city.order}
+                        </span>
+                      </td>
+
                       {/* City Name */}
                       <td className="p-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] rounded-full flex items-center justify-center text-white">
                             <MapPin size={16} />
                           </div>
-                          <div className="font-medium text-gray-900">{city.name}</div>
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium text-gray-900">{city.name}</div>
+                            {city.isDefault && (
+                              <span className="bg-yellow-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                                ⭐ Default
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
 
                       {/* Country */}
                       <td className="p-4">
-                        <div className="flex items-center gap-2 text-gray-700">
-                          <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">
                             {city.countryId?.name || 'N/A'}
                           </span>
                         </div>
@@ -468,12 +573,19 @@ const CityList = () => {
 
                       {/* Status */}
                       <td className="p-4 text-center">
-                        {getStatusBadge(city.isActive)}
+                        {getStatusBadge(city.status)}
                       </td>
 
                       {/* Default */}
                       <td className="p-4 text-center">
-                        {getDefaultBadge(city.isDefault)}
+                        {city.isDefault ? (
+                          <span className="inline-flex items-center gap-1 text-yellow-600 font-medium">
+                            <span className="w-2 h-2 bg-yellow-500 rounded-full"></span>
+                            Yes
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">No</span>
+                        )}
                       </td>
 
                       {/* Employees Count */}
@@ -510,18 +622,19 @@ const CityList = () => {
                           <button
                             onClick={() => handleToggleStatus(city._id)}
                             className={`flex items-center gap-1 px-3 py-2 rounded-lg text-white transition-colors ${
-                              city.isActive
+                              city.status === 1
                                 ? 'bg-gray-500 hover:bg-gray-600'
                                 : 'bg-green-500 hover:bg-green-600'
                             }`}
-                            title={city.isActive ? 'Deactivate' : 'Activate'}
+                            title={city.status === 1 ? 'Deactivate' : 'Activate'}
                           >
-                            {city.isActive ? 'Deactivate' : 'Activate'}
+                            {city.status === 1 ? 'Deactivate' : 'Activate'}
                           </button>
                           <button
                             onClick={() => handleDelete(city._id)}
                             className="flex items-center gap-1 bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-colors"
                             title="Delete"
+                            disabled={city.employees.length > 0 || city.isDefault}
                           >
                             <Trash2 size={16} />
                           </button>
@@ -532,10 +645,13 @@ const CityList = () => {
                     {/* 👥 Employees Under City */}
                     {showEmployees === city._id && (
                       <tr>
-                        <td colSpan="6" className="p-6 bg-gradient-to-r from-purple-50 to-pink-50">
+                        <td colSpan="8" className="p-6 bg-gradient-to-r from-purple-50 to-pink-50">
                           <div className="flex justify-between items-start mb-4">
                             <h4 className="font-semibold text-[#450693]">
-                              Employees in {city.name}
+                              Employees in {city.name}, {city.countryId?.name}
+                              {city.isDefault && (
+                                <span className="ml-2 text-yellow-600 text-sm">⭐ Default City</span>
+                              )}
                             </h4>
                             <button
                               onClick={() => setShowEmployees(null)}
@@ -610,31 +726,65 @@ const CityList = () => {
             )}
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
+          {/* Enhanced Pagination */}
+          {filteredCities.length > 0 && (
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-6 border-t border-gray-200">
               <div className="text-sm text-gray-600">
                 Showing {indexOfFirst + 1} to {Math.min(indexOfLast, filteredCities.length)} of {filteredCities.length} entries
               </div>
+              
               <div className="flex items-center gap-2">
+                {/* First Page */}
                 <button
                   disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => p - 1)}
+                  onClick={() => setCurrentPage(1)}
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  First
+                </button>
+
+                {/* Previous Page */}
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(currentPage - 1)}
                   className="flex items-center gap-1 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronLeft size={16} />
                   Previous
                 </button>
-                <span className="px-4 py-2 bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] text-white rounded-lg font-medium">
-                  Page {currentPage} of {totalPages}
-                </span>
+
+                {/* Page Numbers */}
+                {getPageNumbers().map(pageNumber => (
+                  <button
+                    key={pageNumber}
+                    onClick={() => setCurrentPage(pageNumber)}
+                    className={`px-4 py-2 rounded-lg transition-colors ${
+                      currentPage === pageNumber
+                        ? 'bg-gradient-to-r from-[#8C00FF] to-[#FF3F7F] text-white'
+                        : 'bg-white border border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+
+                {/* Next Page */}
                 <button
                   disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((p) => p + 1)}
+                  onClick={() => setCurrentPage(currentPage + 1)}
                   className="flex items-center gap-1 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Next
                   <ChevronRight size={16} />
+                </button>
+
+                {/* Last Page */}
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(totalPages)}
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Last
                 </button>
               </div>
             </div>
