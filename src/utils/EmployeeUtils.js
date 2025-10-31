@@ -1,41 +1,23 @@
 import axios from "axios";
 
 /**
- * Utility functions for fetching and caching employee form data
- * from the backend APIs.
- *
- * Each function first checks localStorage for cached data.
- * If no cached data is found or cache expired, it makes a GET request.
+ * Utility functions for fetching employee-related form data
+ * from backend APIs — always fetch fresh data (no cache).
  */
 
-// 🔧 Base API URL
+// Base API URL
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 /**
- * Generic function to fetch data from an API endpoint with caching
+ * Generic function to fetch data directly from an API endpoint (no cache)
  */
-const fetchAndCacheData = async (key, endpoint) => {
+const fetchData = async (endpoint) => {
   try {
-    // ✅ 1. Check if data exists in localStorage
-    const cached = localStorage.getItem(key);
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      // Optional: Expiry check — 1 day
-      const oneDay = 24 * 60 * 60 * 1000;
-      if (Date.now() - parsed.timestamp < oneDay) {
-        return parsed.data;
-      }
-    }
+    const { data } = await axios.get(`${API_BASE}/${endpoint}`, {
+      headers: { "Cache-Control": "no-cache" },
+    });
 
-    // ✅ 2. If no cache, fetch from server
-    const { data } = await axios.get(`${API_BASE}/${endpoint}`);
-
-    // ✅ 3. If valid, store in cache with timestamp
     if (data && data.success !== false) {
-      localStorage.setItem(
-        key,
-        JSON.stringify({ data: data.data || data, timestamp: Date.now() })
-      );
       return data.data || data;
     }
 
@@ -48,32 +30,31 @@ const fetchAndCacheData = async (key, endpoint) => {
 };
 
 /**
- * All fetcher functions (for different models)
+ * Exported fetcher functions — always hit the backend
  */
-export const getVisaTypes = () => fetchAndCacheData("visaTypes", "visa-types");
-export const getDepartments = () => fetchAndCacheData("departments", "departments");
-export const getDesignations = () => fetchAndCacheData("designations", "designations");
-export const getTitles = () => fetchAndCacheData("titles", "titles");
-export const getCountries = () => fetchAndCacheData("countries", "countries");
-export const getCities = () => fetchAndCacheData("cities", "cities");
-export const getNationalities = () => fetchAndCacheData("nationalities", "nationalities");
-export const getQualifications = () => fetchAndCacheData("qualifications", "qualifications");
-export const getEmployeeStatuses = () => fetchAndCacheData("employeeStatus", "employee-status");
+export const getVisaTypes = () => fetchData("visa-types");
+export const getDepartments = () => fetchData("departments");
+export const getDesignations = () => fetchData("designations");
+export const getTitles = () => fetchData("titles");
+export const getCountries = () => fetchData("countries");
+export const getCities = () => fetchData("cities");
+export const getNationalities = () => fetchData("nationalities");
+export const getQualifications = () => fetchData("qualifications");
+export const getEmployeeStatuses = () => fetchData("employee-status");
 
 /**
- * Utility to clear all cached form data
+ * Optional: Manual refresh helper if you ever want it later
  */
-export const clearEmployeeFormCache = () => {
-  const keys = [
-    "visaTypes",
-    "departments",
-    "designations",
-    "titles",
-    "countries",
-    "cities",
-    "nationalities",
-    "qualifications",
-    "employeeStatus",
-  ];
-  keys.forEach((key) => localStorage.removeItem(key));
+export const refreshAllEmployeeFormData = async () => {
+  return Promise.all([
+    getTitles(),
+    getCountries(),
+    getCities(),
+    getVisaTypes(),
+    getNationalities(),
+    getDepartments(),
+    getDesignations(),
+    getQualifications(),
+    getEmployeeStatuses(),
+  ]);
 };
