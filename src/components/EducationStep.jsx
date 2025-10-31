@@ -4,7 +4,7 @@ import { employeeAPI } from '@/services/employee';
 import { toast } from 'sonner';
 import { Plus, X, GraduationCap, BookOpen, Calendar } from 'lucide-react';
 
-const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, setCurrentStep }) => {
+const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, setCurrentStep, qualifications }) => {
   const [educations, setEducations] = useState([{
     degree: '',
     institute: '',
@@ -13,17 +13,17 @@ const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
   const [loading, setLoading] = useState(false);
   const [existingEducations, setExistingEducations] = useState([]);
 
-      const qualifications = [
-  "Matric / O-Level",
-  "Intermediate / A-Level",
-  "Diploma",
-  "Bachelor’s Degree",
-  "Master’s Degree",
-  "MPhil",
-  "PhD / Doctorate",
-  "Certification / Short Course",
-  "Other",
-];
+//       const qualifications = [
+//   "Matric / O-Level",
+//   "Intermediate / A-Level",
+//   "Diploma",
+//   "Bachelor’s Degree",
+//   "Master’s Degree",
+//   "MPhil",
+//   "PhD / Doctorate",
+//   "Certification / Short Course",
+//   "Other",
+// ];
 
   useEffect(() => {
     if (employeeId) {
@@ -263,7 +263,7 @@ const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
                         <option value="">Select Qualification</option>
                         {qualifications.map((qualification, idx) => (
                           <option key={idx} value={qualification}>
-                            {qualification}
+                            {qualification.name}
                           </option>
                         ))}
                       </select>
