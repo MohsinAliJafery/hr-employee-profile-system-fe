@@ -2,10 +2,10 @@
 import { useState, useEffect } from 'react';
 import { employeeAPI } from '@/services/employee';
 import { toast } from 'sonner';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, User, Heart, Phone, Mail, MapPin, Calendar, Briefcase, Star } from 'lucide-react';
 import AddressAutocomplete from '@/components/AddressAutoComplete';
 
-const NextOfKinStep = ({ employeeId, onSuccess, onClose }) => {
+const NextOfKinStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, setCurrentStep }) => {
   const [nextOfKins, setNextOfKins] = useState([{
     fullName: '',
     relationship: '',
@@ -161,303 +161,407 @@ const NextOfKinStep = ({ employeeId, onSuccess, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-y-auto rounded-xl">
-        <div className="p-6 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl shadow-2xl">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Next of Kin Information</h2>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+                <Heart size={24} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white">Next of Kin Information</h2>
+                <p className="text-blue-100 mt-1">Add emergency contacts and family information</p>
+              </div>
+            </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-white hover:text-blue-200 transition-colors p-2 rounded-full hover:bg-white hover:bg-opacity-20"
             >
               <X size={24} />
             </button>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           <div className="space-y-6">
+            {/* Existing Next of Kin */}
             {existingNextOfKins.length > 0 && (
-              <div className="mb-6">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">Existing Next of Kin</h4>
-                {existingNextOfKins.map((kin, index) => (
-                  <div key={index} className="border border-gray-200 rounded-lg p-4 mb-3">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h5 className="font-medium text-gray-900">{kin.fullName}</h5>
-                          {kin.isPrimary && (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              Primary
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
+                <div className="flex items-center gap-2 mb-4">
+                  <User size={20} className="text-green-600" />
+                  <h4 className="text-lg font-semibold text-gray-900">Existing Next of Kin</h4>
+                </div>
+                <div className="space-y-4">
+                  {existingNextOfKins.map((kin, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="p-2 bg-green-100 rounded-lg">
+                            <User size={16} className="text-green-600" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h5 className="font-semibold text-gray-900 text-lg">{kin.fullName}</h5>
+                              {kin.isPrimary && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  <Star size={12} />
+                                  Primary
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-green-700 font-medium">{kin.relationship}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-600 ml-11">
+                          <span className="flex items-center gap-1">
+                            <Phone size={14} />
+                            {kin.phoneNumber}
+                          </span>
+                          {kin.email && (
+                            <span className="flex items-center gap-1">
+                              <Mail size={14} />
+                              {kin.email}
                             </span>
                           )}
+                          <span className="flex items-center gap-1">
+                            <MapPin size={14} />
+                            {kin.city}, {kin.country}
+                          </span>
                         </div>
-                        <p className="text-sm text-gray-600">{kin.relationship}</p>
-                        <p className="text-sm text-gray-500">{kin.phoneNumber}</p>
-                        <p className="text-sm text-gray-500">{kin.address}, {kin.city}, {kin.country}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Add New Next of Kin */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Plus size={20} className="text-blue-600" />
+                    <h4 className="text-lg font-semibold text-gray-900">
+                      {existingNextOfKins.length > 0 ? 'Add More Next of Kin' : 'Add Next of Kin'}
+                    </h4>
+                  </div>
+                  <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full border">
+                    {nextOfKins.length} {nextOfKins.length === 1 ? 'contact' : 'contacts'}
+                  </span>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  Add emergency contacts and family members
+                </p>
+              </div>
+              
+              <div className="p-6 space-y-6">
+                {nextOfKins.map((kin, index) => (
+                  <div key={index} className="border border-gray-200 rounded-xl p-6 bg-gradient-to-br from-gray-50 to-white hover:shadow-sm transition-all duration-200">
+                    <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 rounded-lg">
+                          <User size={18} className="text-blue-600" />
+                        </div>
+                        <h5 className="text-lg font-semibold text-gray-900">Contact #{index + 1}</h5>
+                        {kin.isPrimary && (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            <Star size={14} />
+                            Primary Contact
+                          </span>
+                        )}
+                      </div>
+                      {nextOfKins.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeNextOfKinField(index)}
+                          className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                        >
+                          <X size={18} />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                      {/* Full Name */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <User size={16} className="text-blue-600" />
+                          Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          value={kin.fullName}
+                          onChange={(e) => handleNextOfKinChange(index, 'fullName', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                          placeholder="e.g., Sarah Johnson"
+                          required
+                        />
+                      </div>
+
+                      {/* Relationship */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <Heart size={16} className="text-blue-600" />
+                          Relationship to Employee *
+                        </label>
+                        <select
+                          value={kin.relationship}
+                          onChange={(e) => handleNextOfKinChange(index, 'relationship', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                          required
+                        >
+                          <option value="">Select Relationship</option>
+                          {RELATIONSHIPS.map((relationship) => (
+                            <option key={relationship} value={relationship}>
+                              {relationship}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Date of Birth */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <Calendar size={16} className="text-blue-600" />
+                          Date of Birth *
+                        </label>
+                        <input
+                          type="date"
+                          value={kin.dateOfBirth}
+                          onChange={(e) => handleNextOfKinChange(index, 'dateOfBirth', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                          required
+                        />
+                      </div>
+
+                      {/* Gender */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <User size={16} className="text-blue-600" />
+                          Gender *
+                        </label>
+                        <select
+                          value={kin.gender}
+                          onChange={(e) => handleNextOfKinChange(index, 'gender', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                          required
+                        >
+                          <option value="">Select Gender</option>
+                          {GENDERS.map((gender) => (
+                            <option key={gender} value={gender}>
+                              {gender}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Address */}
+                      <div className="md:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <MapPin size={16} className="text-blue-600" />
+                          Address *
+                        </label>
+                        <AddressAutocomplete
+                          value={kin.address}
+                          onChange={(e) => handleNextOfKinChange(index, 'address', e.target.value)}
+                          onSelect={(suggestion) => handleAddressSelect(suggestion, index)}
+                          placeholder="Start typing the address..."
+                          required={true}
+                        />
+                        <p className="text-xs text-gray-500 mt-2">
+                          Start typing address and select from suggestions
+                        </p>
+                      </div>
+
+                      {/* City */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <MapPin size={16} className="text-blue-600" />
+                          City *
+                        </label>
+                        <input
+                          type="text"
+                          value={kin.city}
+                          onChange={(e) => handleNextOfKinChange(index, 'city', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                          placeholder="e.g., London"
+                          required
+                        />
+                      </div>
+
+                      {/* Country */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <MapPin size={16} className="text-blue-600" />
+                          Country *
+                        </label>
+                        <select
+                          value={kin.country}
+                          onChange={(e) => handleNextOfKinChange(index, 'country', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                          required
+                        >
+                          <option value="">Select Country</option>
+                          {COUNTRIES.map((country) => (
+                            <option key={country} value={country}>
+                              {country}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Phone Number */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <Phone size={16} className="text-blue-600" />
+                          Phone Number (Primary) *
+                        </label>
+                        <input
+                          type="tel"
+                          value={kin.phoneNumber}
+                          onChange={(e) => handleNextOfKinChange(index, 'phoneNumber', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                          placeholder="e.g., +44 7700 900077"
+                          required
+                        />
+                      </div>
+
+                      {/* Alternate Phone Number */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <Phone size={16} className="text-blue-600" />
+                          Alternate Phone Number
+                        </label>
+                        <input
+                          type="tel"
+                          value={kin.alternatePhoneNumber}
+                          onChange={(e) => handleNextOfKinChange(index, 'alternatePhoneNumber', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                          placeholder="e.g., +44 7700 900088"
+                        />
+                      </div>
+
+                      {/* Email */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <Mail size={16} className="text-blue-600" />
+                          Email Address
+                        </label>
+                        <input
+                          type="email"
+                          value={kin.email}
+                          onChange={(e) => handleNextOfKinChange(index, 'email', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                          placeholder="e.g., sarah.johnson@email.com"
+                        />
+                      </div>
+
+                      {/* Occupation */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                          <Briefcase size={16} className="text-blue-600" />
+                          Occupation
+                        </label>
+                        <input
+                          type="text"
+                          value={kin.occupation}
+                          onChange={(e) => handleNextOfKinChange(index, 'occupation', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                          placeholder="e.g., Teacher, Engineer"
+                        />
+                      </div>
+
+                      {/* Primary Contact Checkbox */}
+                      <div className="md:col-span-2">
+                        <label className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors">
+                          <input
+                            type="checkbox"
+                            checked={kin.isPrimary}
+                            onChange={(e) => handleNextOfKinChange(index, 'isPrimary', e.target.checked)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          />
+                          <div className="flex items-center gap-2">
+                            <Star size={16} className="text-blue-600" />
+                            <span className="text-sm font-medium text-blue-700">Set as primary emergency contact</span>
+                          </div>
+                        </label>
                       </div>
                     </div>
                   </div>
                 ))}
+
+                {/* Add Another Next of Kin Button */}
+                <button
+                  type="button"
+                  onClick={addNextOfKinField}
+                  className="flex items-center gap-3 px-6 py-4 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl border-2 border-dashed border-blue-300 transition-all duration-200 w-full justify-center group"
+                >
+                  <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
+                    <Plus size={18} className="text-blue-600" />
+                  </div>
+                  <span className="font-semibold">Add Another Next of Kin</span>
+                </button>
               </div>
-            )}
-
-            <div>
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                {existingNextOfKins.length > 0 ? 'Add More Next of Kin' : 'Add Next of Kin'}
-              </h4>
-              
-              {nextOfKins.map((kin, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-6 mb-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-3">
-                      <h5 className="text-md font-medium text-gray-900">Next of Kin #{index + 1}</h5>
-                      {kin.isPrimary && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                          Primary Contact
-                        </span>
-                      )}
-                    </div>
-                    {nextOfKins.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeNextOfKinField(index)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <X size={20} />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Full Name *
-                      </label>
-                      <input
-                        type="text"
-                        value={kin.fullName}
-                        onChange={(e) => handleNextOfKinChange(index, 'fullName', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="e.g., Sarah Johnson"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Relationship to Employee *
-                      </label>
-                      <select
-                        value={kin.relationship}
-                        onChange={(e) => handleNextOfKinChange(index, 'relationship', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      >
-                        <option value="">Select Relationship</option>
-                        {RELATIONSHIPS.map((relationship) => (
-                          <option key={relationship} value={relationship}>
-                            {relationship}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Date of Birth *
-                      </label>
-                      <input
-                        type="date"
-                        value={kin.dateOfBirth}
-                        onChange={(e) => handleNextOfKinChange(index, 'dateOfBirth', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Gender *
-                      </label>
-                      <select
-                        value={kin.gender}
-                        onChange={(e) => handleNextOfKinChange(index, 'gender', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      >
-                        <option value="">Select Gender</option>
-                        {GENDERS.map((gender) => (
-                          <option key={gender} value={gender}>
-                            {gender}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Address *
-                      </label>
-                      <AddressAutocomplete
-                        value={kin.address}
-                        onChange={(e) => handleNextOfKinChange(index, 'address', e.target.value)}
-                        onSelect={(suggestion) => handleAddressSelect(suggestion, index)}
-                        placeholder="Start typing the address..."
-                        required={true}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        City *
-                      </label>
-                      <input
-                        type="text"
-                        value={kin.city}
-                        onChange={(e) => handleNextOfKinChange(index, 'city', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="e.g., London"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Country *
-                      </label>
-                      <select
-                        value={kin.country}
-                        onChange={(e) => handleNextOfKinChange(index, 'country', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        required
-                      >
-                        <option value="">Select Country</option>
-                        {COUNTRIES.map((country) => (
-                          <option key={country} value={country}>
-                            {country}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Phone Number (Primary) *
-                      </label>
-                      <input
-                        type="tel"
-                        value={kin.phoneNumber}
-                        onChange={(e) => handleNextOfKinChange(index, 'phoneNumber', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="e.g., +44 7700 900077"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Alternate Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        value={kin.alternatePhoneNumber}
-                        onChange={(e) => handleNextOfKinChange(index, 'alternatePhoneNumber', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="e.g., +44 7700 900088"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Email Address
-                      </label>
-                      <input
-                        type="email"
-                        value={kin.email}
-                        onChange={(e) => handleNextOfKinChange(index, 'email', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="e.g., sarah.johnson@email.com"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Occupation
-                      </label>
-                      <input
-                        type="text"
-                        value={kin.occupation}
-                        onChange={(e) => handleNextOfKinChange(index, 'occupation', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="e.g., Teacher, Engineer"
-                      />
-                    </div>
-
-                    <div className="md:col-span-2">
-                      <label className="flex items-center gap-2 text-sm text-gray-700">
-                        <input
-                          type="checkbox"
-                          checked={kin.isPrimary}
-                          onChange={(e) => handleNextOfKinChange(index, 'isPrimary', e.target.checked)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        Set as primary emergency contact
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              <button
-                type="button"
-                onClick={addNextOfKinField}
-                className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6"
-              >
-                <Plus size={16} />
-                Add Another Next of Kin
-              </button>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
+            {/* Information Box */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                  <Heart size={20} className="text-blue-600" />
                 </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-blue-800">Emergency Contact Information</h3>
-                  <div className="mt-2 text-sm text-blue-700">
-                    <p>Please provide at least one next of kin contact. The primary contact will be used first in case of emergencies.</p>
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-800 mb-2">Emergency Contact Information</h3>
+                  <div className="text-sm text-blue-700 space-y-2">
+                    <p>• Please provide at least one next of kin contact for emergency situations</p>
+                    <p>• The primary contact will be used first in case of emergencies</p>
+                    <p>• Ensure contact information is current and accurate</p>
+                    <p>• Multiple contacts can be added for different family members</p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+          {/* Submit Buttons */}
+          <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
             <button
               type="button"
-              onClick={onClose}
-              className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+              onClick={onBack}
+              className="flex items-center gap-2 px-6 py-3 text-gray-600 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all duration-200 font-medium"
             >
+              <X size={18} />
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Saving...
-                </>
-              ) : (
-                'Save Next of Kin Information'
-              )}
-            </button>
+            
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onBack}
+                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium"
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Saving Contacts...
+                  </>
+                ) : (
+                  <>
+                    <Heart size={18} />
+                    Save Next of Kin & Continue
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>

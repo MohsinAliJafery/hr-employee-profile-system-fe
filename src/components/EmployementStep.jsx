@@ -2,10 +2,10 @@
 import { useState, useEffect } from 'react';
 import { employeeAPI } from '@/services/employee';
 import { toast } from 'sonner';
-import { Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { getDepartments, getDesignations } from '@/utils/employeeFormDataUtils';
+import { Plus, X, ChevronLeft, ChevronRight, Building, Calendar, DollarSign, Briefcase, MapPin, Clock } from 'lucide-react';
+import { getDepartments, getDesignations } from '@/utils/EmployeeUtils';
 
-const EmploymentStep = ({ employeeId, onSuccess, onClose }) => {
+const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, setCurrentStep }) => {
   const [formData, setFormData] = useState({
     department: '',
     jobTitle: '',
@@ -152,7 +152,7 @@ const EmploymentStep = ({ employeeId, onSuccess, onClose }) => {
     setEmployments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleSubmit = async (e) => {
+   const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Validate current employment
@@ -174,35 +174,43 @@ const EmploymentStep = ({ employeeId, onSuccess, onClose }) => {
     setLoading(true);
 
     try {
-      const submitData = new FormData();
+      // Get current employee data first
+      const currentEmployeeResponse = await employeeAPI.getEmployeeById(employeeId);
+      if (!currentEmployeeResponse.success) {
+        throw new Error('Failed to load employee data');
+      }
+
+      const currentEmployee = currentEmployeeResponse.data;
       
-      // Append current employment data
-      Object.keys(formData).forEach(key => {
-        if (formData[key] !== null && formData[key] !== undefined) {
-          submitData.append(key, formData[key]);
-        }
-      });
+      // Merge employment history
+      const updatedEmployments = [
+        ...(currentEmployee.employments || []),
+        ...employments.map(emp => ({
+          employerName: emp.employerName,
+          jobTitle: emp.jobTitle,
+          employmentType: emp.employmentType,
+          companyAddress: emp.companyAddress,
+          department: emp.department,
+          startDate: emp.startDate,
+          endDate: emp.endDate,
+          duration: emp.duration,
+          jobDescription: emp.jobDescription,
+          reasonForLeaving: emp.reasonForLeaving
+        }))
+      ];
 
-      // Append employment history
-      const employmentJson = employments.map(emp => ({
-        employerName: emp.employerName,
-        jobTitle: emp.jobTitle,
-        employmentType: emp.employmentType,
-        companyAddress: emp.companyAddress,
-        department: emp.department,
-        startDate: emp.startDate,
-        endDate: emp.endDate,
-        duration: emp.duration,
-        jobDescription: emp.jobDescription,
-        reasonForLeaving: emp.reasonForLeaving
-      }));
-      submitData.append('employments', JSON.stringify(employmentJson));
+      // Update both current employment and employment history
+      const updateData = {
+        ...formData, // Current employment data
+        employments: updatedEmployments
+      };
 
-      const response = await employeeAPI.updateEmployee(employeeId, submitData);
+      const response = await employeeAPI.updateEmployee(employeeId, updateData);
       
       if (response.success) {
         toast.success('Employment information updated successfully');
-        onSuccess(employeeId);
+        setEmployeeId(response.data._id);
+        setCurrentStep(4)
       } else {
         toast.error(response.message || 'Failed to update employment information');
       }
@@ -215,33 +223,48 @@ const EmploymentStep = ({ employeeId, onSuccess, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-xl">
-        <div className="p-6 border-b border-gray-200">
+    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-2xl shadow-2xl">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">Employment Information</h2>
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white bg-opacity-20 rounded-lg">
+                <Briefcase size={24} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-white">Employment Information</h2>
+                <p className="text-blue-100 mt-1">Add current employment and work history</p>
+              </div>
+            </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-white hover:text-blue-200 transition-colors p-2 rounded-full hover:bg-white hover:bg-opacity-20"
             >
               <X size={24} />
             </button>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           <div className="space-y-8">
             {/* Current Employment */}
-            <div className="border-b pb-8">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">Current Employment</h3>
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+              <div className="flex items-center gap-2 mb-6">
+                <Building size={20} className="text-blue-600" />
+                <h3 className="text-xl font-semibold text-gray-900">Current Employment</h3>
+              </div>
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Department *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <Building size={16} className="text-blue-600" />
+                    Department *
+                  </label>
                   <select
                     name="department"
                     value={formData.department}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                     required
                   >
                     <option value="">Select Department</option>
@@ -254,12 +277,15 @@ const EmploymentStep = ({ employeeId, onSuccess, onClose }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Job Title *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <Briefcase size={16} className="text-blue-600" />
+                    Job Title *
+                  </label>
                   <select
                     name="jobTitle"
                     value={formData.jobTitle}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                     required
                   >
                     <option value="">Select Job Title</option>
@@ -272,26 +298,32 @@ const EmploymentStep = ({ employeeId, onSuccess, onClose }) => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Date *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <Calendar size={16} className="text-blue-600" />
+                    Start Date *
+                  </label>
                   <input
                     type="date"
                     name="startDate"
                     value={formData.startDate}
                     onChange={handleInputChange}
                     max={new Date().toISOString().split('T')[0]}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Salary *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                    <DollarSign size={16} className="text-blue-600" />
+                    Salary *
+                  </label>
                   <input
                     type="number"
                     name="salary"
                     value={formData.salary}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
                     placeholder="e.g., 50000"
                     required
                   />
@@ -300,266 +332,348 @@ const EmploymentStep = ({ employeeId, onSuccess, onClose }) => {
             </div>
 
             {/* Employment History */}
-            <div>
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-semibold text-gray-900">Employment History</h3>
-                <button
-                  type="button"
-                  onClick={addEmploymentField}
-                  className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Plus size={16} />
-                  Add New
-                </button>
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock size={20} className="text-blue-600" />
+                    <h3 className="text-xl font-semibold text-gray-900">Employment History</h3>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-full border">
+                      {employments.length} {employments.length === 1 ? 'entry' : 'entries'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={addEmploymentField}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                    >
+                      <Plus size={16} />
+                      Add New
+                    </button>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  Add previous employment records and work experience
+                </p>
               </div>
 
-              {existingEmployments.length > 0 && (
-                <div className="mb-6">
-                  <h4 className="text-lg font-semibold text-gray-900 mb-4">Existing Employment History</h4>
-                  {existingEmployments.map((emp, index) => (
-                    <div key={index} className="border border-gray-200 rounded-lg p-4 mb-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h5 className="font-medium text-gray-900">{emp.jobTitle} at {emp.employerName}</h5>
-                          <p className="text-sm text-gray-600">
-                            {emp.startDate ? new Date(emp.startDate).toLocaleDateString() : ''} - 
-                            {emp.endDate === 'Present' ? ' Present' : (emp.endDate ? new Date(emp.endDate).toLocaleDateString() : '')}
-                          </p>
-                          <p className="text-sm text-gray-500">{emp.employmentType}</p>
+              <div className="p-6">
+                {/* Existing Employment History */}
+                {existingEmployments.length > 0 && (
+                  <div className="mb-8">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                      <Building size={18} className="text-green-600" />
+                      Existing Employment History
+                    </h4>
+                    <div className="space-y-4">
+                      {existingEmployments.map((emp, index) => (
+                        <div key={index} className="border border-green-200 rounded-xl p-4 bg-gradient-to-br from-green-50 to-white">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-3 mb-2">
+                                <div className="p-2 bg-green-100 rounded-lg">
+                                  <Briefcase size={16} className="text-green-600" />
+                                </div>
+                                <div>
+                                  <h5 className="font-semibold text-gray-900 text-lg">{emp.jobTitle}</h5>
+                                  <p className="text-green-700 font-medium">{emp.employerName}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm text-gray-600 ml-11">
+                                <span className="flex items-center gap-1">
+                                  <Calendar size={14} />
+                                  {emp.startDate ? new Date(emp.startDate).toLocaleDateString() : ''} - 
+                                  {emp.endDate === 'Present' ? ' Present' : (emp.endDate ? new Date(emp.endDate).toLocaleDateString() : '')}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <Clock size={14} />
+                                  {emp.employmentType}
+                                </span>
+                                {emp.duration && (
+                                  <span className="flex items-center gap-1">
+                                    <MapPin size={14} />
+                                    {emp.duration}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* New Employment History Entries */}
+                <div className="space-y-6">
+                  {employments.map((employment, index) => (
+                    <div key={index} className="border border-gray-200 rounded-xl p-6 bg-gradient-to-br from-gray-50 to-white hover:shadow-sm transition-all duration-200">
+                      <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <Building size={18} className="text-blue-600" />
+                          </div>
+                          <h4 className="text-lg font-semibold text-gray-900">Employment #{index + 1}</h4>
+                        </div>
+                        {employments.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeEmploymentField(index)}
+                            className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200"
+                          >
+                            <X size={18} />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Employment Details */}
+                      <div className="mb-8">
+                        <h5 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                          <Briefcase size={18} className="text-blue-600" />
+                          Employment Details
+                        </h5>
+                        <div className="grid md:grid-cols-2 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                              <Building size={16} className="text-blue-600" />
+                              Employer Name *
+                            </label>
+                            <input
+                              type="text"
+                              value={employment.employerName}
+                              onChange={(e) => handleEmploymentChange(index, 'employerName', e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              placeholder="e.g., Google Inc."
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                              <Briefcase size={16} className="text-blue-600" />
+                              Job Title / Position Held *
+                            </label>
+                            <input
+                              type="text"
+                              value={employment.jobTitle}
+                              onChange={(e) => handleEmploymentChange(index, 'jobTitle', e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              placeholder="e.g., Senior Software Engineer"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                              <Clock size={16} className="text-blue-600" />
+                              Employment Type *
+                            </label>
+                            <select
+                              value={employment.employmentType}
+                              onChange={(e) => handleEmploymentChange(index, 'employmentType', e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              required
+                            >
+                              <option value="">Select Type</option>
+                              {EMPLOYMENT_TYPES.map((type) => (
+                                <option key={type} value={type}>
+                                  {type}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                              <MapPin size={16} className="text-blue-600" />
+                              Company Address / Location *
+                            </label>
+                            <input
+                              type="text"
+                              value={employment.companyAddress}
+                              onChange={(e) => handleEmploymentChange(index, 'companyAddress', e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              placeholder="e.g., San Francisco, CA, USA"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                              <Building size={16} className="text-blue-600" />
+                              Department / Division (optional)
+                            </label>
+                            <input
+                              type="text"
+                              value={employment.department}
+                              onChange={(e) => handleEmploymentChange(index, 'department', e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              placeholder="e.g., Engineering Department"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Dates of Employment */}
+                      <div className="mb-8">
+                        <h5 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                          <Calendar size={18} className="text-blue-600" />
+                          Dates of Employment
+                        </h5>
+                        <div className="grid md:grid-cols-3 gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Start Date (Month/Year) *
+                            </label>
+                            <input
+                              type="month"
+                              value={employment.startDate}
+                              onChange={(e) => handleDateChange(index, 'startDate', e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              required
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              End Date (Month/Year) *
+                            </label>
+                            <div className="space-y-3">
+                              <input
+                                type="month"
+                                value={employment.endDate === 'Present' ? '' : employment.endDate}
+                                onChange={(e) => handleDateChange(index, 'endDate', e.target.value)}
+                                disabled={employment.endDate === 'Present'}
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 disabled:bg-gray-100"
+                                required={employment.endDate !== 'Present'}
+                              />
+                              <label className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors">
+                                <input
+                                  type="checkbox"
+                                  checked={employment.endDate === 'Present'}
+                                  onChange={(e) => 
+                                    handleDateChange(index, 'endDate', e.target.checked ? 'Present' : '')
+                                  }
+                                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                />
+                                <span className="text-sm font-medium text-blue-700">Currently working here (Present)</span>
+                              </label>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                              <Clock size={16} className="text-blue-600" />
+                              Total Duration
+                            </label>
+                            <input
+                              type="text"
+                              value={employment.duration}
+                              onChange={(e) => handleEmploymentChange(index, 'duration', e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50"
+                              placeholder="Auto-calculated"
+                              readOnly
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Additional Information */}
+                      <div>
+                        <h5 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                          <Briefcase size={18} className="text-blue-600" />
+                          Additional Information (Optional)
+                        </h5>
+                        <div className="grid gap-6">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Job Description / Responsibilities
+                            </label>
+                            <textarea
+                              value={employment.jobDescription}
+                              onChange={(e) => handleEmploymentChange(index, 'jobDescription', e.target.value)}
+                              rows={3}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              placeholder="Describe your main responsibilities and achievements..."
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Reason for Leaving (if applicable)
+                            </label>
+                            <input
+                              type="text"
+                              value={employment.reasonForLeaving}
+                              onChange={(e) => handleEmploymentChange(index, 'reasonForLeaving', e.target.value)}
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              placeholder="e.g., Career growth, Company restructuring, etc."
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
                   ))}
-                </div>
-              )}
 
-              {employments.map((employment, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-6 mb-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h4 className="text-lg font-medium text-gray-900">Employment #{index + 1}</h4>
-                    {employments.length > 1 && (
+                  {employments.length === 0 && (
+                    <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
+                      <div className="p-3 bg-gray-200 rounded-full w-12 h-12 mx-auto mb-4 flex items-center justify-center">
+                        <Briefcase size={24} className="text-gray-500" />
+                      </div>
+                      <p className="text-gray-500 mb-4 text-lg">No employment history added yet</p>
                       <button
                         type="button"
-                        onClick={() => removeEmploymentField(index)}
-                        className="text-red-600 hover:text-red-700"
+                        onClick={addEmploymentField}
+                        className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 mx-auto shadow-sm hover:shadow-md"
                       >
-                        <X size={20} />
+                        <Plus size={18} />
+                        Add First Employment
                       </button>
-                    )}
-                  </div>
-
-                  {/* Employment Details */}
-                  <div className="mb-8">
-                    <h5 className="text-lg font-medium text-gray-900 mb-4">1. Employment Details</h5>
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Employer Name *
-                        </label>
-                        <input
-                          type="text"
-                          value={employment.employerName}
-                          onChange={(e) => handleEmploymentChange(index, 'employerName', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="e.g., Google Inc."
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Job Title / Position Held *
-                        </label>
-                        <input
-                          type="text"
-                          value={employment.jobTitle}
-                          onChange={(e) => handleEmploymentChange(index, 'jobTitle', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="e.g., Senior Software Engineer"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Employment Type *
-                        </label>
-                        <select
-                          value={employment.employmentType}
-                          onChange={(e) => handleEmploymentChange(index, 'employmentType', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          required
-                        >
-                          <option value="">Select Type</option>
-                          {EMPLOYMENT_TYPES.map((type) => (
-                            <option key={type} value={type}>
-                              {type}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Company Address / Location *
-                        </label>
-                        <input
-                          type="text"
-                          value={employment.companyAddress}
-                          onChange={(e) => handleEmploymentChange(index, 'companyAddress', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="e.g., San Francisco, CA, USA"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Department / Division (optional)
-                        </label>
-                        <input
-                          type="text"
-                          value={employment.department}
-                          onChange={(e) => handleEmploymentChange(index, 'department', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="e.g., Engineering Department"
-                        />
-                      </div>
                     </div>
-                  </div>
-
-                  {/* Dates of Employment */}
-                  <div>
-                    <h5 className="text-lg font-medium text-gray-900 mb-4">2. Dates of Employment</h5>
-                    <div className="grid md:grid-cols-3 gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Start Date (Month/Year) *
-                        </label>
-                        <input
-                          type="month"
-                          value={employment.startDate}
-                          onChange={(e) => handleDateChange(index, 'startDate', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          required
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          End Date (Month/Year) *
-                        </label>
-                        <div className="space-y-2">
-                          <input
-                            type="month"
-                            value={employment.endDate === 'Present' ? '' : employment.endDate}
-                            onChange={(e) => handleDateChange(index, 'endDate', e.target.value)}
-                            disabled={employment.endDate === 'Present'}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
-                            required={employment.endDate !== 'Present'}
-                          />
-                          <label className="flex items-center gap-2 text-sm text-gray-700">
-                            <input
-                              type="checkbox"
-                              checked={employment.endDate === 'Present'}
-                              onChange={(e) => 
-                                handleDateChange(index, 'endDate', e.target.checked ? 'Present' : '')
-                              }
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                            Currently working here (Present)
-                          </label>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Total Duration
-                        </label>
-                        <input
-                          type="text"
-                          value={employment.duration}
-                          onChange={(e) => handleEmploymentChange(index, 'duration', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
-                          placeholder="Auto-calculated"
-                          readOnly
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Additional Information */}
-                  <div className="mt-8">
-                    <h5 className="text-lg font-medium text-gray-900 mb-4">Additional Information (Optional)</h5>
-                    <div className="grid gap-6">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Job Description / Responsibilities
-                        </label>
-                        <textarea
-                          value={employment.jobDescription}
-                          onChange={(e) => handleEmploymentChange(index, 'jobDescription', e.target.value)}
-                          rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="Describe your main responsibilities and achievements..."
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Reason for Leaving (if applicable)
-                        </label>
-                        <input
-                          type="text"
-                          value={employment.reasonForLeaving}
-                          onChange={(e) => handleEmploymentChange(index, 'reasonForLeaving', e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          placeholder="e.g., Career growth, Company restructuring, etc."
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              ))}
-
-              {employments.length === 0 && (
-                <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                  <p className="text-gray-500 mb-4">No employment history added yet</p>
-                  <button
-                    type="button"
-                    onClick={addEmploymentField}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors mx-auto"
-                  >
-                    <Plus size={16} />
-                    Add First Employment
-                  </button>
-                </div>
-              )}
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+          {/* Submit Buttons */}
+          <div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200">
             <button
               type="button"
-              onClick={onClose}
-              className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+              onClick={onBack}
+              className="flex items-center gap-2 px-6 py-3 text-gray-600 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all duration-200 font-medium"
             >
+              <X size={18} />
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-            >
-              {loading ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Saving...
-                </>
-              ) : (
-                'Save Employment Information'
-              )}
-            </button>
+            
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onBack}
+                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium"
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Saving Employment...
+                  </>
+                ) : (
+                  <>
+                    <Briefcase size={18} />
+                    Save Employment & Continue
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>

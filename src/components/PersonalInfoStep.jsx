@@ -3,15 +3,25 @@ import { useState, useEffect } from 'react';
 import AddressAutocomplete from '@/components/AddressAutoComplete';
 import { employeeAPI } from '@/services/employee';
 import { toast } from 'sonner';
-import { getTitles, getCountries, getCities, getVisaTypes } from '@/utils/employeeFormDataUtils';
-import { Upload, FileText, X } from 'lucide-react';
+import { Upload, FileText, X, Camera } from 'lucide-react';
+import { 
+  getTitles,
+  getCountries,
+  getCities,
+  getVisaTypes,
+  getNationalities,
+  getDepartments,
+  getDesignations,
+  getQualifications,
+  getEmployeeStatuses,
+} from '@/utils/EmployeeUtils';
 
 const PersonalInfoStep = ({ 
   employeeId, 
-  initialData, 
+  setEmployeeId,
   onSuccess, 
   onClose,
-  isLastStep = false 
+  setCurrentStep
 }) => {
   const [formData, setFormData] = useState({
     title: '',
@@ -32,11 +42,12 @@ const PersonalInfoStep = ({
     postCode: '',
     visaType: '',
     visaExpiry: '',
+    nationalInsuranceNumber: '',
     isActive: true,
   });
-  
+
   const [profilePicture, setProfilePicture] = useState(null);
-  const [visaFile, setVisaFile] = useState(null);
+  const [profilePictureFile, setProfilePictureFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [titles, setTitles] = useState([]);
   const [countries, setCountries] = useState([]);
@@ -87,18 +98,24 @@ const PersonalInfoStep = ({
 
   const loadFormData = async () => {
     try {
-      const [titlesData, countriesData, citiesData, visaTypesData] = await Promise.all([
+      const [
+        titlesData,
+        countriesData,
+        citiesData,
+        visaTypesData,
+      ] = await Promise.all([
         getTitles(),
         getCountries(),
         getCities(),
-        getVisaTypes()
+        getVisaTypes(),
       ]);
+
       setTitles(titlesData);
       setCountries(countriesData);
       setCities(citiesData);
       setVisaTypes(visaTypesData);
     } catch (error) {
-      console.error('Error loading form data:', error);
+      console.error("Error loading form data:", error);
     }
   };
 
@@ -126,8 +143,17 @@ const PersonalInfoStep = ({
           postCode: employee.postCode || '',
           visaType: employee.visaType || '',
           visaExpiry: employee.visaExpiry ? employee.visaExpiry.split('T')[0] : '',
+          nationalInsuranceNumber: employee.nationalInsuranceNumber || '',
           isActive: employee.isActive ?? true,
         });
+
+        if (employee.profilePicture) {
+          // Fixed profile picture URL construction
+          const profilePicUrl = employee.profilePicture.startsWith('http') 
+            ? employee.profilePicture 
+            : `${process.env.NEXT_PUBLIC_API_BASE_URL}/uploads/profile-pictures/${employee.profilePicture}`;
+          setProfilePicture(profilePicUrl);
+        }
       }
     } catch (error) {
       console.error('Error loading employee data:', error);
@@ -158,26 +184,53 @@ const PersonalInfoStep = ({
     console.log('Selected address:', suggestion);
   };
 
+  const handleProfilePictureChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        toast.error('Please select a valid image file (JPEG, PNG, WebP)');
+        return;
+      }
+
+      // Validate file size (2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('File size must be less than 2MB');
+        return;
+      }
+
+      setProfilePictureFile(file);
+      setProfilePicture(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.email && !emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
     setLoading(true);
 
     try {
+      // Create FormData for file upload
       const submitData = new FormData();
-      
-      // Append form data
+
+      // Append all form fields
       Object.keys(formData).forEach(key => {
         if (formData[key] !== null && formData[key] !== undefined) {
           submitData.append(key, formData[key]);
         }
       });
 
-      if (profilePicture) {
-        submitData.append('profilePicture', profilePicture);
-      }
-
-      if (visaFile) {
-        submitData.append('visaFile', visaFile);
+      // Append files if they exist
+      if (profilePictureFile) {
+        submitData.append('profilePicture', profilePictureFile);
       }
 
       let response;
@@ -189,450 +242,454 @@ const PersonalInfoStep = ({
 
       if (response.success) {
         toast.success(`Employee ${employeeId ? 'updated' : 'created'} successfully`);
-        onSuccess(response.data._id);
+        setEmployeeId(response.data._id);
+        setCurrentStep(2)
+        console.log("Personal FOrm SUbmit:", response.data._id)
       } else {
         toast.error(response.message || `Failed to ${employeeId ? 'update' : 'create'} employee`);
       }
     } catch (error) {
       console.error('Error submitting form:', error);
-      toast.error('Error submitting form');
+      toast.error(error.message || 'Error submitting form');
     } finally {
       setLoading(false);
-        onSuccess(1);
-
     }
   };
 
   return (
-    <div className="bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white w-full max-w-full h-screen overflow-y-auto">
-        <div className="p-6 border-b border-gray-200">
+    <div className="bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-gray-900">
-              {employeeId ? 'Edit Personal Information' : 'Personal Information'}
-            </h2>
+            <div>
+              <h2 className="text-2xl font-bold text-white">
+                {employeeId ? 'Edit Personal Information' : 'Personal Information'}
+              </h2>
+              <p className="text-blue-100 mt-1">
+                {employeeId ? 'Update employee personal details' : 'Add new employee personal details'}
+              </p>
+            </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-white hover:text-blue-200 transition-colors p-2 rounded-full hover:bg-white hover:bg-opacity-20"
             >
               <X size={24} />
             </button>
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
-          <div className="space-y-6">
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+          <div className="space-y-8">
             {/* Profile Picture Upload */}
-            <div className="border-b pb-6">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h4>
-              <div className="flex items-center gap-6">
-                <div className="flex-shrink-0">
+            <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+              <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Camera size={20} className="text-blue-600" />
+                Profile Picture
+              </h4>
+              <div className="flex items-center gap-8">
+                <div className="flex-shrink-0 relative">
                   {profilePicture ? (
-                    <img 
-                      src={URL.createObjectURL(profilePicture)} 
-                      alt="Profile preview" 
-                      className="w-40 h-40 rounded-full object-cover border-2 border-gray-300"
-                    />
+                    <div className="relative">
+                      <img 
+                        src={profilePicture} 
+                        alt="Profile preview" 
+                        className="w-32 h-32 rounded-2xl object-cover border-4 border-white shadow-lg"
+                      />
+                      <div className="absolute inset-0 rounded-2xl border-2 border-blue-200"></div>
+                    </div>
                   ) : (
-                    <div className="w-40 h-40 rounded-full bg-gray-200 flex items-center justify-center border-2 border-dashed border-gray-300">
-                      <Upload size={24} className="text-gray-400" />
+                    <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center border-4 border-white shadow-lg">
+                      <Camera size={32} className="text-gray-400" />
                     </div>
                   )}
                 </div>
-                <div className="flex-1">
-                  <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors w-fit">
-                    <Upload size={16} />
+                <div className="flex-1 space-y-3">
+                  <label className="flex items-center gap-3 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 cursor-pointer transition-all duration-200 w-fit shadow-md hover:shadow-lg">
+                    <Upload size={18} />
                     {profilePicture ? 'Change Picture' : 'Upload Picture'}
                     <input
                       type="file"
                       className="hidden"
                       accept=".jpg,.jpeg,.png,.webp"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setProfilePicture(file);
-                        }
-                      }}
+                      onChange={handleProfilePictureChange}
                     />
                   </label>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-sm text-gray-600">
                     Recommended: Square image, 500x500px, Max 2MB
+                    <br />
+                    <span className="text-xs text-gray-500">JPEG, PNG, WebP formats supported</span>
                   </p>
                 </div>
-                <div>
+                <div className="bg-white rounded-lg p-4 border border-gray-200">
                   <div className="flex items-center">
                     <input
                       type="checkbox"
                       name="isActive"
                       checked={formData.isActive || false}
                       onChange={handleInputChange}
-                      className="h-6 w-6 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      className="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
-                    <label className="ml-2 block text-md text-gray-900">Active Employee</label>
+                    <label className="ml-3 block text-sm font-medium text-gray-900">Active Employee</label>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
-              {/* Title */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
-                <select
-                  name="title"
-                  value={formData.title}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Select Title</option>
-                  {titles.map(title => (
-                    <option key={title._id} value={title._id}>
-                      {title.title}
-                    </option>
-                  ))}
-                </select>
+            {/* Personal Details Section */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-900">Personal Details</h4>
               </div>
+              <div className="p-6">
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Title */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Title *</label>
+                    <select
+                      name="title"
+                      value={formData.title}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      required
+                    >
+                      <option value="">Select Title</option>
+                      {titles.map(title => (
+                        <option key={title._id} value={title._id}>
+                          {title.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              {/* First Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
+                  {/* First Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
+                    <input
+                      type="text"
+                      name="firstName"
+                      value={formData.firstName}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      required
+                    />
+                  </div>
+
+                  {/* Middle Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Middle Name</label>
+                    <input
+                      type="text"
+                      name="middleName"
+                      value={formData.middleName}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    />
+                  </div>
+
+                  {/* Last Name */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                    <input
+                      type="text"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      required
+                    />
+                  </div>
+
+                  {/* Date of Birth */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth *</label>
+                    <input
+                      type="date"
+                      name="dateOfBirth"
+                      value={formData.dateOfBirth}
+                      onChange={handleInputChange}
+                      max={today}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      required
+                    />
+                  </div>
+
+                  {/* Place of Birth */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Place of Birth *</label>
+                    <input
+                      type="text"
+                      name="placeOfBirth"
+                      value={formData.placeOfBirth}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      placeholder="e.g., London, UK"
+                      required
+                    />
+                  </div>
+
+                  {/* Gender */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Gender *</label>
+                    <select
+                      name="gender"
+                      value={formData.gender}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      required
+                    >
+                      <option value="">Select Gender</option>
+                      {GENDERS.map((gender) => (
+                        <option key={gender} value={gender}>
+                          {gender}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Blood Group */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Blood Group</label>
+                    <select
+                      name="bloodGroup"
+                      value={formData.bloodGroup}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    >
+                      <option value="">Select Blood Group</option>
+                      {BLOOD_GROUPS.map((group) => (
+                        <option key={group} value={group}>
+                          {group}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Marital Status */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Marital Status</label>
+                    <select
+                      name="maritalStatus"
+                      value={formData.maritalStatus}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      required
+                    >
+                      <option value="">Select Marital Status</option>
+                      {MARITAL_STATUSES.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Nationality */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Nationality *</label>
+                    <select
+                      name="nationality"
+                      value={formData.nationality}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      required
+                    >
+                      <option value="">Select Nationality</option>
+                      {NATIONALITIES.map((nationality) => (
+                        <option key={nationality} value={nationality}>
+                          {nationality}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* National Insurance Number */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">National Insurance Number *</label>
+                    <input
+                      type="text"
+                      name="nationalInsuranceNumber"
+                      value={formData.nationalInsuranceNumber || ''}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      required
+                    />
+                  </div>
+                </div>
               </div>
+            </div>
 
-              {/* Middle Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Middle Name</label>
-                <input
-                  type="text"
-                  name="middleName"
-                  value={formData.middleName}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+            {/* Contact Information Section */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-900">Contact Information</h4>
               </div>
+              <div className="p-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Email Address */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleEmailChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      placeholder="e.g., john.doe@company.com"
+                      required
+                    />
+                    {emailError && (
+                      <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
+                        <span>⚠</span> {emailError}
+                      </p>
+                    )}
+                  </div>
 
-              {/* Last Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
+                  {/* Contact No */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Contact No. *</label>
+                    <input
+                      type="tel"
+                      name="contactNo"
+                      value={formData.contactNo}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      placeholder="e.g., +44 20 7946 0958"
+                      required
+                    />
+                  </div>
 
-              {/* Date of Birth */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Date of Birth *</label>
-                <input
-                  type="date"
-                  name="dateOfBirth"
-                  value={formData.dateOfBirth}
-                  onChange={handleInputChange}
-                  max={today}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
+                  {/* Address */}
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
+                    <AddressAutocomplete
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      onSelect={handleAddressSelect}
+                      placeholder="Start typing your address..."
+                      required={true}
+                    />
+                    <p className="text-xs text-gray-500 mt-2">
+                      Start typing your address and select from suggestions
+                    </p>
+                  </div>
 
-              {/* Place of Birth */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Place of Birth *</label>
-                <input
-                  type="text"
-                  name="placeOfBirth"
-                  value={formData.placeOfBirth}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., London, UK"
-                  required
-                />
-              </div>
+                  {/* Post Code */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Post Code *</label>
+                    <input
+                      type="text"
+                      name="postCode"
+                      value={formData.postCode}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      placeholder="e.g., SPA 7DE"
+                      required
+                    />
+                  </div>
 
-              {/* Gender */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Gender *</label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Select Gender</option>
-                  {GENDERS.map((gender) => (
-                    <option key={gender} value={gender}>
-                      {gender}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                  {/* City */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
+                    <select
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      required
+                    >
+                      <option value="">Select City</option>
+                      {cities.map(city => (
+                        <option key={city._id} value={city._id}>
+                          {city.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-              {/* Blood Group */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Blood Group</label>
-                <select
-                  name="bloodGroup"
-                  value={formData.bloodGroup}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="">Select Blood Group</option>
-                  {BLOOD_GROUPS.map((group) => (
-                    <option key={group} value={group}>
-                      {group}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Marital Status */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Marital Status</label>
-                <select
-                  name="maritalStatus"
-                  value={formData.maritalStatus}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Select Marital Status</option>
-                  {MARITAL_STATUSES.map((status) => (
-                    <option key={status} value={status}>
-                      {status}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Nationality */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nationality *</label>
-                <select
-                  name="nationality"
-                  value={formData.nationality}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Select Nationality</option>
-                  {NATIONALITIES.map((nationality) => (
-                    <option key={nationality} value={nationality}>
-                      {nationality}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">National Insurance Number *</label>
-                <input
-                  type="text"
-                  name="nationalInsuranceNumber"
-                  value={formData.nationalInsuranceNumber || ''}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                />
-              </div>
-
-              {/* Email Address */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleEmailChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., john.doe@company.com"
-                  required
-                />
-                {emailError && (
-                  <p className="text-red-500 text-sm mt-1">{emailError}</p>
-                )}
-              </div>
-
-              {/* Contact No */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Contact No. *</label>
-                <input
-                  type="tel"
-                  name="contactNo"
-                  value={formData.contactNo}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., +44 20 7946 0958"
-                  required
-                />
-              </div>
-
-              {/* Address */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Address *</label>
-                <AddressAutocomplete
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  onSelect={handleAddressSelect}
-                  placeholder="Start typing your address..."
-                  required={true}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Start typing your address and select from suggestions
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Post Code *</label>
-                <input
-                  type="text"
-                  name="postCode"
-                  value={formData.postCode}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="e.g., SPA 7DE"
-                  required
-                />
-              </div>
-
-              {/* City */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
-                <select
-                  name="city"
-                  value={formData.city}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Select City</option>
-                  {cities.map(city => (
-                    <option key={city._id} value={city._id}>
-                      {city.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Country */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Country *</label>
-                <select
-                  name="country"
-                  value={formData.country}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Select Country</option>
-                  {countries.map(country => (
-                    <option key={country._id} value={country._id}>
-                      {country.name}
-                    </option>
-                  ))}
-                </select>
+                  {/* Country */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Country *</label>
+                    <select
+                      name="country"
+                      value={formData.country}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      required
+                    >
+                      <option value="">Select Country</option>
+                      {countries.map(country => (
+                        <option key={country._id} value={country._id}>
+                          {country.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Visa Information */}
-            <div className="border-t pt-6">
-              <h4 className="text-lg font-semibold text-gray-900 mb-4">Visa Information</h4>
-              <div className="grid md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Visa Type *</label>
-                  <select
-                    name="visaType"
-                    value={formData.visaType}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  >
-                    <option value="">Select Visa Type</option>
-                    {visaTypes.map(visaType => (
-                      <option key={visaType._id} value={visaType._id}>
-                        {visaType.type}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Visa Expiry Date *</label>
-                  <input
-                    type="date"
-                    name="visaExpiry"
-                    value={formData.visaExpiry}
-                    onChange={handleInputChange}
-                    min={today}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Visa Document Upload</label>
-                  <div className="flex items-center gap-3">
-                    <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
-                      <Upload size={16} />
-                      {visaFile ? 'Change Visa Document' : 'Choose Visa Document'}
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setVisaFile(file);
-                          }
-                        }}
-                      />
-                    </label>
-                    
-                    {visaFile && (
-                      <div className="flex items-center gap-2 text-sm text-blue-600">
-                        <FileText size={16} />
-                        <span>New file: {visaFile.name}</span>
-                      </div>
-                    )}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
+                <h4 className="text-lg font-semibold text-gray-900">Visa Information</h4>
+              </div>
+              <div className="p-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Visa Type *</label>
+                    <select
+                      name="visaType"
+                      value={formData.visaType}
+                      onChange={handleInputChange}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      required
+                    >
+                      <option value="">Select Visa Type</option>
+                      {visaTypes.map(visaType => (
+                        <option key={visaType._id} value={visaType._id}>
+                          {visaType.type}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Upload visa copy (PDF, DOC, JPG, PNG - Max 5MB)
-                  </p>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Visa Expiry Date *</label>
+                    <input
+                      type="date"
+                      name="visaExpiry"
+                      value={formData.visaExpiry}
+                      onChange={handleInputChange}
+                      min={today}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                      required
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Submit Button */}
-          <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+          <div className="flex justify-end gap-4 mt-8 pt-6 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+              className="px-8 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                   {employeeId ? 'Updating...' : 'Creating...'}
                 </>
               ) : (

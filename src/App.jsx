@@ -18,8 +18,11 @@ import NationalityList from './pages/nationalities/NationalityList.jsx';
 import EmployeeList from './pages/employee/Employees.jsx';
 import EmployeeStatus from './pages/employeeStatus/employeeStatus.jsx';
 import QualificationList from './pages/qualifications/QualificationsList.jsx';
+import EmployeeModal from './pages/employee/Employees.jsx';
+import { useState } from 'react';
 
 const App = () => {
+
 
   return (
         <Routes>
@@ -31,7 +34,7 @@ const App = () => {
           {/* Dashboard & nested routes - no protection */}
           <Route path="/dashboard" element={<Layout />}>
             <Route index element={<Dashboard />} />
-            <Route path="employees" element={<EmployeeList />} />
+            <Route path="employees" element={<EmployeeModal />} />
             <Route path="employee/residencystatus" element={<ResidencyStatus />} />
             <Route path="departments" element={<DepartmentList />} />
             <Route path="documents" element={<DocumentsList />} />

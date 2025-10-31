@@ -1,172 +1,380 @@
-// components/EmployeeMultiStepForm.jsx
-import { useState } from 'react';
-import { X, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+// pages/employees.jsx
+import { useState, useEffect } from 'react';
+import { Plus, Eye, Edit, Trash2, Search } from 'lucide-react';
+import { employeeAPI } from '@/services/employee';
+import { toast } from 'sonner';
 import PersonalInfoStep from '@/components/PersonalInfoStep';
 import EducationStep from '@/components/EducationStep';
 import EmploymentStep from '@/components/EmployementStep';
 import DocumentsStep from '@/components/DocumentsStep';
 import NextOfKinStep from '@/components/NextOfKinStep';
 
-const EmployeeList = ({ onClose, onSuccess }) => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const [savedData, setSavedData] = useState({});
-  const [currentEmployeeId, setCurrentEmployeeId] = useState(null);
+const EmployeesPage = () => {
+  const [employees, setEmployees] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
 
+  const [currentStep, setCurrentStep] = useState(1);
+  const [employeeId, setEmployeeId] = useState(null);
+
+  useEffect(() => {
+    loadEmployees();
+  }, []);
+
+  const loadEmployees = async () => {
+    try {
+      setLoading(true);
+      const response = await employeeAPI.getAllEmployees();
+      if (response.success) {
+        setEmployees(response.data || []);
+      }
+    } catch (error) {
+      console.error('Error loading employees:', error);
+      toast.error('Failed to load employees');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddEmployee = () => {
+    setSelectedEmployee(null);
+    setIsModalOpen(true);
+    setCurrentStep(1);
+    setEmployeeId(null);
+  };
+
+  const handleEditEmployee = (employee) => {
+    setSelectedEmployee(employee);
+    setEmployeeId(employee._id);
+    setIsModalOpen(true);
+    setCurrentStep(1);
+  };
+
+  const handleViewEmployee = (employee) => {
+    setSelectedEmployee(employee);
+    setIsModalOpen(true);
+    setCurrentStep(1);
+  };
+
+  const handleDeleteEmployee = async (employee) => {
+    if (!confirm(`Are you sure you want to delete ${employee.firstName} ${employee.lastName}?`)) {
+      return;
+    }
+
+    try {
+      const response = await employeeAPI.deleteEmployee(employee._id);
+      if (response.success) {
+        toast.success('Employee deleted successfully');
+        loadEmployees();
+      } else {
+        toast.error(response.message || 'Failed to delete employee');
+      }
+    } catch (error) {
+      console.error('Error deleting employee:', error);
+      toast.error('Error deleting employee');
+    }
+  };
+
+  // 🧩 Step Management Handlers
+  const handleNextStep = (id) => {
+    console.log("Employee created with ID:", id);
+    setEmployeeId(id);
+    setCurrentStep(2);
+  };
+
+  const handleModalSuccess = () => {
+    toast.success("Employee setup completed successfully!");
+    setIsModalOpen(false);
+    setEmployeeId(null);
+    loadEmployees();
+  };
+
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+    setSelectedEmployee(null);
+    setEmployeeId(null);
+    setCurrentStep(1);
+  };
+
+  // Filters
+  const filteredEmployees = employees.filter(employee => {
+    const matchesSearch =
+      employee.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      employee.contactNo?.includes(searchTerm);
+
+    const matchesStatus =
+      filterStatus === 'all' ||
+      (filterStatus === 'active' && employee.isActive) ||
+      (filterStatus === 'inactive' && !employee.isActive);
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const getStatusBadge = (isActive) => (
+    <span
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+        isActive
+          ? 'bg-green-100 text-green-800'
+          : 'bg-red-100 text-red-800'
+      }`}
+    >
+      {isActive ? 'Active' : 'Inactive'}
+    </span>
+  );
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // 🧭 Step Titles
   const steps = [
-    { 
-      name: 'personal', 
-      title: 'Personal Information',
-      component: PersonalInfoStep 
-    },
-    { 
-      name: 'education', 
-      title: 'Education',
-      component: EducationStep 
-    },
-    { 
-      name: 'employment', 
-      title: 'Employment History',
-      component: EmploymentStep 
-    },
-    { 
-      name: 'documents', 
-      title: 'Documents',
-      component: DocumentsStep
-    },
-    { 
-      name: 'nextOfKin', 
-      title: 'Next of Kin',
-      component: NextOfKinStep 
-    },
+    { id: 1, label: "Personal Info" },
+    { id: 2, label: "Education" },
+    { id: 3, label: "Employment" },
+    { id: 4, label: "Documents" },
+    { id: 5, label: "NextofKin" },
   ];
 
-  const handleStepSuccess = (employeeId, stepData) => {
-    // Save the data from this step
-    setSavedData(prev => ({
-      ...prev,
-      [steps[currentStep].name]: stepData
-    }));
-    
-    // Set employee ID if this is the first step
-    if (!currentEmployeeId && employeeId) {
-      setCurrentEmployeeId(employeeId);
-    }
-
-    // Move to next step if not the last one
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    } else {
-      // All steps completed
-      onSuccess(employeeId);
-      onClose();
-    }
-  };
-
-  const handleStepBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prev => prev - 1);
-    }
-  };
-
-  const renderCurrentStep = () => {
-    const StepComponent = steps[currentStep].component;
-    
-    return (
-      <StepComponent
-        employeeId={currentEmployeeId}
-        initialData={savedData[steps[currentStep].name]}
-        onSuccess={handleStepSuccess}
-        onClose={onClose}
-        isLastStep={currentStep === steps.length - 1}
-      />
-    );
-  };
+  // 🧠 Step Progress UI Component
+  const StepHeader = () => (
+    <div className="sticky top-0 z-50 bg-white shadow-sm border-b">
+      <div className="max-w-4xl mx-auto px-6 py-4 flex justify-between items-center">
+        {steps.map((step) => (
+          <div key={step.id} className="flex-1 flex flex-col items-center relative">
+            <div
+              className={`h-10 w-10 flex items-center justify-center rounded-full border-2 transition-all ${
+                currentStep >= step.id
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white text-gray-400 border-gray-300'
+              }`}
+            >
+              {step.id}
+            </div>
+            <span
+              className={`text-sm mt-2 ${
+                currentStep >= step.id ? 'text-blue-600 font-medium' : 'text-gray-500'
+              }`}
+            >
+              {step.label}
+            </span>
+            {step.id < steps.length && (
+              <div
+                className={`absolute top-5 left-[60%] w-full h-0.5 ${
+                  currentStep > step.id ? 'bg-blue-600' : 'bg-gray-300'
+                }`}
+              ></div>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">Add New Employee</h2>
-              <p className="text-gray-600 mt-1">
-                Step {currentStep + 1} of {steps.length}: {steps[currentStep].title}
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              type='button'
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X size={24} />
-            </button>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow">
+        <div className="px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Employees</h1>
+            <p className="text-gray-600 mt-1">
+              Manage your organization's employees
+            </p>
+          </div>
+          <button
+            onClick={handleAddEmployee}
+            className="mt-4 sm:mt-0 flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus size={20} />
+            Add Employee
+          </button>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="px-6 py-4">
+        <div className="bg-white rounded-lg shadow-sm p-4 flex flex-col sm:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Search employees by name, email, or phone..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
           </div>
 
-          {/* Progress Steps */}
-          <div className="mt-6"> 
-            <div className="flex items-center justify-between">
-              {steps.map((step, idx) => (
-                <div key={step.name} className="flex items-center">
-                  <div
-                    className={`flex items-center justify-center w-8 h-8 rounded-full ${
-                      idx <= currentStep ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'
-                    }`}
-                  >
-                    {idx + 1}
-                  </div>
-                  <span
-                    className={`ml-2 text-sm font-medium ${
-                      idx <= currentStep ? 'text-blue-600' : 'text-gray-500'
-                    }`}
-                  >
-                    {step.title}
-                  </span>
-                  {idx < steps.length - 1 && (
-                    <div
-                      className={`w-12 h-0.5 mx-4 ${
-                        idx < currentStep ? 'bg-blue-600' : 'bg-gray-300'
-                      }`}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Step Content */}
-        <div className="p-6">
-          {renderCurrentStep()}
-        </div>
-
-        {/* Navigation */}
-        <div className="p-6 border-t border-gray-200 bg-gray-50">
-          <div className="flex justify-between">
-            <button
-              type="button"
-              onClick={handleStepBack}
-              disabled={currentStep === 0}
-              className="flex items-center gap-2 px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          <div className="sm:w-48">
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <ChevronLeft size={16} />
-              Back
-            </button>
-            
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
           </div>
         </div>
       </div>
+
+      {/* Employees Table */}
+      <div className="px-6 pb-6">
+        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
+          {filteredEmployees.length === 0 ? (
+            <div className="text-center py-12">
+              <Plus size={48} className="mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No employees found
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {employees.length === 0 
+                  ? "Get started by adding your first employee."
+                  : "No employees match your search criteria."
+                }
+              </p>
+              <button
+                onClick={handleAddEmployee}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus size={20} />
+                Add Employee
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Contact</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visa Expiry</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredEmployees.map((employee) => (
+                    <tr key={employee._id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center">
+                          <img
+                            className="h-10 w-10 rounded-full object-cover mr-3"
+                            src={employee.profilePicture}
+                            alt=""
+                          />
+                          <div>
+                            <div className="font-medium text-gray-900">{employee.firstName} {employee.lastName}</div>
+                            <div className="text-sm text-gray-500">{employee.title?.title || 'N/A'}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-gray-900">{employee.email}</div>
+                        <div className="text-gray-500">{employee.contactNo}</div>
+                      </td>
+                      <td className="px-6 py-4 text-gray-900">
+                        {employee.city?.name || 'N/A'}, {employee.country?.name || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 text-gray-900">{formatDate(employee.visaExpiry)}</td>
+                      <td className="px-6 py-4">{getStatusBadge(employee.isActive)}</td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => handleViewEmployee(employee)} className="text-blue-600 hover:text-blue-900"><Eye size={16} /></button>
+                          <button onClick={() => handleEditEmployee(employee)} className="text-green-600 hover:text-green-900"><Edit size={16} /></button>
+                          <button onClick={() => handleDeleteEmployee(employee)} className="text-red-600 hover:text-red-900"><Trash2 size={16} /></button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 🧭 Multi-step Wizard Modal */}
+      {isModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 overflow-auto">
+          <StepHeader />
+
+          {currentStep === 1 && (
+            <PersonalInfoStep
+              setEmployeeId={setEmployeeId}
+              setCurrentStep={setCurrentStep}
+              onSuccess={() => setCurrentStep(2)}
+              onClose={handleModalClose}
+            />
+          )}
+
+          {currentStep === 2 && (
+            <EducationStep
+              employeeId={employeeId}
+              setEmployeeId={setEmployeeId}
+              setCurrentStep={setCurrentStep}
+              onSuccess={() => setCurrentStep(3)}
+              onClose={handleModalClose}
+              onBack={() => setCurrentStep(1)}
+            />
+          )}
+
+          {currentStep === 3 && (
+            <EmploymentStep
+                employeeId={employeeId}
+              setEmployeeId={setEmployeeId}
+              setCurrentStep={setCurrentStep}
+              onSuccess={() => setCurrentStep(4)}
+              onClose={handleModalClose}
+              onBack={() => setCurrentStep(2)}
+            />
+          )}
+
+          {currentStep === 4 && (
+            <DocumentsStep
+                employeeId={employeeId}
+              setEmployeeId={setEmployeeId}
+              setCurrentStep={setCurrentStep}
+              onSuccess={() => setCurrentStep(5)}
+              onClose={handleModalClose}
+              onBack={() => setCurrentStep(3)}
+            />
+          )}
+
+           {currentStep === 5 && (
+            <NextOfKinStep
+              employeeId={employeeId}
+              setEmployeeId={setEmployeeId}
+              setCurrentStep={setCurrentStep}
+              onSuccess={handleModalSuccess}
+              onClose={handleModalClose}
+              onBack={() => setCurrentStep(4)}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 };
 
-export default EmployeeList;
+export default EmployeesPage;
