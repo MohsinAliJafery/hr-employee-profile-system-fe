@@ -223,15 +223,15 @@ const DocumentsStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
     <div className="bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-xl">
+        <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-t-xl">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold">Documents Upload</h2>
-              <p className="text-blue-100 mt-1">Upload and manage employee documents</p>
+              <p className="text-purple-100 mt-1">Upload and manage employee documents</p>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:text-blue-200 transition-colors p-2 rounded-lg hover:bg-blue-500"
+              className="text-white hover:text-purple-200 transition-colors p-2 rounded-lg hover:bg-purple-500"
             >
               <X size={24} />
             </button>
@@ -250,11 +250,11 @@ const DocumentsStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
-                            <FileText className="text-blue-500" size={20} />
+                            <FileText className="text-purple-500" size={20} />
                             <div>
                               <h5 className="font-semibold text-gray-900">{doc.documentTitle}</h5>
                               {doc.documentType && (
-                                <span className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                                <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded">
                                   {doc.documentType}
                                 </span>
                               )}
@@ -273,7 +273,7 @@ const DocumentsStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
                           <button
                             type="button"
                             onClick={() => handleViewDocument(doc)}
-                            className="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-2 text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded-lg transition-colors"
                             title="View Document"
                           >
                             <Eye size={18} />
@@ -337,7 +337,7 @@ const DocumentsStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
                         <select
                           value={doc.documentType}
                           onChange={(e) => handleDocumentChange(index, 'documentType', e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                         >
                           <option value="">Select Document Type</option>
                           {DOCUMENT_TYPES.map((type) => (
@@ -356,7 +356,7 @@ const DocumentsStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
                           type="text"
                           value={doc.documentTitle}
                           onChange={(e) => handleDocumentChange(index, 'documentTitle', e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                           placeholder="e.g., UK Passport Bio Page"
                           required
                         />
@@ -368,7 +368,7 @@ const DocumentsStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
                         </label>
                         <div className="space-y-3">
                           <div className="flex items-center gap-4">
-                            <label className="flex items-center gap-3 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-all border-2 border-dashed border-blue-200 shadow-sm">
+                            <label className="flex items-center gap-3 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 cursor-pointer transition-all border-2 border-dashed border-purple-200 shadow-sm">
                               <Upload size={20} />
                               <span className="font-medium">
                                 {doc.file ? 'Change Document' : 'Choose Document'}
@@ -398,7 +398,7 @@ const DocumentsStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
                                 <button
                                   type="button"
                                   onClick={() => handleViewDocument(doc)}
-                                  className="p-1 text-blue-600 hover:text-blue-800"
+                                  className="p-1 text-purple-600 hover:text-purple-800"
                                   title="Preview Document"
                                 >
                                   <Eye size={16} />
@@ -420,7 +420,7 @@ const DocumentsStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
                           value={doc.description}
                           onChange={(e) => handleDocumentChange(index, 'description', e.target.value)}
                           rows={3}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                           placeholder="Add any additional notes about this document..."
                         />
                       </div>
@@ -432,7 +432,7 @@ const DocumentsStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
                 <button
                   type="button"
                   onClick={addDocumentField}
-                  className="flex items-center gap-3 px-6 py-3 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg border-2 border-dashed border-blue-200 transition-all w-full justify-center"
+                  className="flex items-center gap-3 px-6 py-3 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg border-2 border-dashed border-purple-200 transition-all w-full justify-center"
                 >
                   <Plus size={20} />
                   <span className="font-medium">Add Another Document</span>
@@ -441,14 +441,14 @@ const DocumentsStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
             </div>
 
             {/* Information Box */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-6">
               <div className="flex items-start">
                 <div className="flex-shrink-0">
-                  <FileText className="h-6 w-6 text-blue-400" />
+                  <FileText className="h-6 w-6 text-purple-400" />
                 </div>
                 <div className="ml-4">
-                  <h3 className="text-sm font-medium text-blue-800">Document Requirements</h3>
-                  <div className="mt-2 text-sm text-blue-700">
+                  <h3 className="text-sm font-medium text-purple-800">Document Requirements</h3>
+                  <div className="mt-2 text-sm text-purple-700">
                     <ul className="list-disc list-inside space-y-1">
                       <li>Upload all required documents for employment verification</li>
                       <li>Accepted formats: PDF, DOC, DOCX, JPG, PNG, WEBP</li>
@@ -517,7 +517,7 @@ const DocumentsStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-3 px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-3 px-8 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>

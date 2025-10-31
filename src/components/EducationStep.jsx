@@ -13,6 +13,18 @@ const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
   const [loading, setLoading] = useState(false);
   const [existingEducations, setExistingEducations] = useState([]);
 
+      const qualifications = [
+  "Matric / O-Level",
+  "Intermediate / A-Level",
+  "Diploma",
+  "Bachelor’s Degree",
+  "Master’s Degree",
+  "MPhil",
+  "PhD / Doctorate",
+  "Certification / Short Course",
+  "Other",
+];
+
   useEffect(() => {
     if (employeeId) {
       loadEducations();
@@ -63,6 +75,8 @@ const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
       toast.error('Please fill all required education fields');
       return;
     }
+
+
 
     setLoading(true);
 
@@ -125,10 +139,10 @@ const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl shadow-2xl">
+    <div className="fixed inset-0 bg-black relative bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white w-full max-w-7xl max-h-[90vh] overflow-hidden rounded-2xl shadow-2xl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6">
+        <div className="bg-gradient-to-r from-purple-600 to-purple-800 p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white bg-opacity-20 rounded-lg">
@@ -136,12 +150,12 @@ const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-white">Education Information</h2>
-                <p className="text-blue-100 mt-1">Add educational qualifications and background</p>
+                <p className="text-purple-100 mt-1">Add educational qualifications and background</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:text-blue-200 transition-colors p-2 rounded-full hover:bg-white hover:bg-opacity-20"
+              className="text-white hover:text-purple-200 transition-colors p-2 rounded-full hover:bg-white hover:bg-opacity-20"
             >
               <X size={24} />
             </button>
@@ -152,9 +166,9 @@ const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
           <div className="space-y-6">
             {/* Existing Education Records */}
             {existingEducations.length > 0 && (
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-200">
                 <div className="flex items-center gap-2 mb-4">
-                  <BookOpen size={20} className="text-blue-600" />
+                  <BookOpen size={20} className="text-purple-600" />
                   <h4 className="text-lg font-semibold text-gray-900">Existing Education Records</h4>
                 </div>
                 <div className="space-y-4">
@@ -162,8 +176,8 @@ const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
                     <div key={index} className="flex items-center justify-between p-4 bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                            <GraduationCap size={16} className="text-blue-600" />
+                          <div className="p-2 bg-purple-100 rounded-lg">
+                            <GraduationCap size={16} className="text-purple-600" />
                           </div>
                           <h5 className="font-semibold text-gray-900 text-lg">{edu.degree}</h5>
                         </div>
@@ -197,7 +211,7 @@ const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Plus size={20} className="text-blue-600" />
+                    <Plus size={20} className="text-purple-600" />
                     <h4 className="text-lg font-semibold text-gray-900">
                       {existingEducations.length > 0 ? 'Add More Education' : 'Add Education'}
                     </h4>
@@ -216,8 +230,8 @@ const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
                   <div key={index} className="border border-gray-200 rounded-xl p-6 bg-gradient-to-br from-gray-50 to-white hover:shadow-sm transition-all duration-200">
                     <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 rounded-lg">
-                          <GraduationCap size={18} className="text-blue-600" />
+                        <div className="p-2 bg-purple-100 rounded-lg">
+                          <GraduationCap size={18} className="text-purple-600" />
                         </div>
                         <h5 className="text-lg font-semibold text-gray-900">Education #{index + 1}</h5>
                       </div>
@@ -236,30 +250,37 @@ const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
                       {/* Degree */}
                       <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                          <GraduationCap size={16} className="text-blue-600" />
+                          <GraduationCap size={16} className="text-purple-600" />
                           Degree/Qualification <span className="text-red-500">*</span>
                         </label>
-                        <input
-                          type="text"
-                          value={edu.degree}
-                          onChange={(e) => handleEducationChange(index, 'degree', e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
-                          placeholder="e.g., Bachelor of Science in Computer Science"
-                          required
-                        />
+                       <select
+                        name="degree"
+                        value={edu.degree}
+                        onChange={(e) => handleEducationChange(index, 'degree', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
+                        required
+                      >
+                        <option value="">Select Qualification</option>
+                        {qualifications.map((qualification, idx) => (
+                          <option key={idx} value={qualification}>
+                            {qualification}
+                          </option>
+                        ))}
+                      </select>
+
                       </div>
 
                       {/* Institute */}
                       <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                          <BookOpen size={16} className="text-blue-600" />
+                          <BookOpen size={16} className="text-purple-600" />
                           Institute/University <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           value={edu.institute}
                           onChange={(e) => handleEducationChange(index, 'institute', e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
                           placeholder="e.g., University of Oxford"
                           required
                         />
@@ -268,13 +289,13 @@ const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
                       {/* Passing Year */}
                       <div className="space-y-2">
                         <label className="block text-sm font-medium text-gray-700 flex items-center gap-2">
-                          <Calendar size={16} className="text-blue-600" />
+                          <Calendar size={16} className="text-purple-600" />
                           Passing Year <span className="text-red-500">*</span>
                         </label>
                         <select
                           value={edu.passingYear}
                           onChange={(e) => handleEducationChange(index, 'passingYear', e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none bg-white"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 appearance-none bg-white"
                           required
                         >
                           <option value="">Select Year</option>
@@ -299,10 +320,10 @@ const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
                 <button
                   type="button"
                   onClick={addEducationField}
-                  className="flex items-center gap-3 px-6 py-4 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl border-2 border-dashed border-blue-300 transition-all duration-200 w-full justify-center group"
+                  className="flex items-center gap-3 px-6 py-4 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-xl border-2 border-dashed border-purple-300 transition-all duration-200 w-full justify-center group"
                 >
-                  <div className="p-2 bg-blue-100 rounded-lg group-hover:bg-blue-200 transition-colors">
-                    <Plus size={18} className="text-blue-600" />
+                  <div className="p-2 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
+                    <Plus size={18} className="text-purple-600" />
                   </div>
                   <span className="font-semibold">Add Another Education</span>
                 </button>
@@ -332,7 +353,7 @@ const EducationStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, 
               <button
                 type="submit"
                 disabled={loading}
-                className="flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>

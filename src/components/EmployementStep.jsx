@@ -3,9 +3,8 @@ import { useState, useEffect } from 'react';
 import { employeeAPI } from '@/services/employee';
 import { toast } from 'sonner';
 import { Plus, X, ChevronLeft, ChevronRight, Building, Calendar, DollarSign, Briefcase, MapPin, Clock } from 'lucide-react';
-import { getDepartments, getDesignations } from '@/utils/EmployeeUtils';
 
-const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, setCurrentStep }) => {
+const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack, setCurrentStep, departments, designations }) => {
   const [formData, setFormData] = useState({
     department: '',
     jobTitle: '',
@@ -27,9 +26,9 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
   }]);
 
   const [loading, setLoading] = useState(false);
-  const [departments, setDepartments] = useState([]);
-  const [designations, setDesignations] = useState([]);
   const [existingEmployments, setExistingEmployments] = useState([]);
+
+  
 
   const EMPLOYMENT_TYPES = [
     'Full-time', 'Part-time', 'Contract', 'Internship', 'Freelance', 
@@ -37,24 +36,11 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
   ];
 
   useEffect(() => {
-    loadFormData();
     if (employeeId) {
       loadEmployeeData();
     }
   }, [employeeId]);
 
-  const loadFormData = async () => {
-    try {
-      const [deptsData, designationsData] = await Promise.all([
-        getDepartments(),
-        getDesignations()
-      ]);
-      setDepartments(deptsData);
-      setDesignations(designationsData);
-    } catch (error) {
-      console.error('Error loading form data:', error);
-    }
-  };
 
   const loadEmployeeData = async () => {
     try {
@@ -223,10 +209,10 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white w-full max-w-6xl max-h-[90vh] overflow-hidden rounded-2xl shadow-2xl">
+    <div className="bg-black relative bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white w-full max-w-7xl max-h-[90vh] overflow-hidden rounded-2xl shadow-2xl">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-800 p-6">
+        <div className="bg-gradient-to-r from-purple-600 to-purple-800 p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white bg-opacity-20 rounded-lg">
@@ -234,12 +220,12 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-white">Employment Information</h2>
-                <p className="text-blue-100 mt-1">Add current employment and work history</p>
+                <p className="text-purple-100 mt-1">Add current employment and work history</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:text-blue-200 transition-colors p-2 rounded-full hover:bg-white hover:bg-opacity-20"
+              className="text-white hover:text-purple-200 transition-colors p-2 rounded-full hover:bg-white hover:bg-opacity-20"
             >
               <X size={24} />
             </button>
@@ -249,22 +235,22 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
           <div className="space-y-8">
             {/* Current Employment */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl p-6 border border-purple-200">
               <div className="flex items-center gap-2 mb-6">
-                <Building size={20} className="text-blue-600" />
+                <Building size={20} className="text-purple-600" />
                 <h3 className="text-xl font-semibold text-gray-900">Current Employment</h3>
               </div>
               <div className="grid md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                    <Building size={16} className="text-blue-600" />
+                    <Building size={16} className="text-purple-600" />
                     Department *
                   </label>
                   <select
                     name="department"
                     value={formData.department}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
                     required
                   >
                     <option value="">Select Department</option>
@@ -278,28 +264,30 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                    <Briefcase size={16} className="text-blue-600" />
+                    <Briefcase size={16} className="text-purple-600" />
                     Job Title *
                   </label>
                   <select
                     name="jobTitle"
                     value={formData.jobTitle}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
                     required
                   >
                     <option value="">Select Job Title</option>
                     {designations.map(designation => (
                       <option key={designation._id} value={designation._id}>
-                        {designation.name}
+                        {designation.title}
                       </option>
                     ))}
                   </select>
+
+
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                    <Calendar size={16} className="text-blue-600" />
+                    <Calendar size={16} className="text-purple-600" />
                     Start Date *
                   </label>
                   <input
@@ -308,14 +296,14 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
                     value={formData.startDate}
                     onChange={handleInputChange}
                     max={new Date().toISOString().split('T')[0]}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
                     required
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                    <DollarSign size={16} className="text-blue-600" />
+                    <DollarSign size={16} className="text-purple-600" />
                     Salary *
                   </label>
                   <input
@@ -323,7 +311,7 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
                     name="salary"
                     value={formData.salary}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
                     placeholder="e.g., 50000"
                     required
                   />
@@ -336,7 +324,7 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
               <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Clock size={20} className="text-blue-600" />
+                    <Clock size={20} className="text-purple-600" />
                     <h3 className="text-xl font-semibold text-gray-900">Employment History</h3>
                   </div>
                   <div className="flex items-center gap-3">
@@ -346,7 +334,7 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
                     <button
                       type="button"
                       onClick={addEmploymentField}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                      className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-all duration-200 shadow-sm hover:shadow-md"
                     >
                       <Plus size={16} />
                       Add New
@@ -411,8 +399,8 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
                     <div key={index} className="border border-gray-200 rounded-xl p-6 bg-gradient-to-br from-gray-50 to-white hover:shadow-sm transition-all duration-200">
                       <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
                         <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-100 rounded-lg">
-                            <Building size={18} className="text-blue-600" />
+                          <div className="p-2 bg-purple-100 rounded-lg">
+                            <Building size={18} className="text-purple-600" />
                           </div>
                           <h4 className="text-lg font-semibold text-gray-900">Employment #{index + 1}</h4>
                         </div>
@@ -430,20 +418,20 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
                       {/* Employment Details */}
                       <div className="mb-8">
                         <h5 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                          <Briefcase size={18} className="text-blue-600" />
+                          <Briefcase size={18} className="text-purple-600" />
                           Employment Details
                         </h5>
                         <div className="grid md:grid-cols-2 gap-6">
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                              <Building size={16} className="text-blue-600" />
+                              <Building size={16} className="text-purple-600" />
                               Employer Name *
                             </label>
                             <input
                               type="text"
                               value={employment.employerName}
                               onChange={(e) => handleEmploymentChange(index, 'employerName', e.target.value)}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
                               placeholder="e.g., Google Inc."
                               required
                             />
@@ -451,14 +439,14 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
 
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                              <Briefcase size={16} className="text-blue-600" />
+                              <Briefcase size={16} className="text-purple-600" />
                               Job Title / Position Held *
                             </label>
                             <input
                               type="text"
                               value={employment.jobTitle}
                               onChange={(e) => handleEmploymentChange(index, 'jobTitle', e.target.value)}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
                               placeholder="e.g., Senior Software Engineer"
                               required
                             />
@@ -466,13 +454,13 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
 
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                              <Clock size={16} className="text-blue-600" />
+                              <Clock size={16} className="text-purple-600" />
                               Employment Type *
                             </label>
                             <select
                               value={employment.employmentType}
                               onChange={(e) => handleEmploymentChange(index, 'employmentType', e.target.value)}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
                               required
                             >
                               <option value="">Select Type</option>
@@ -486,14 +474,14 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
 
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                              <MapPin size={16} className="text-blue-600" />
+                              <MapPin size={16} className="text-purple-600" />
                               Company Address / Location *
                             </label>
                             <input
                               type="text"
                               value={employment.companyAddress}
                               onChange={(e) => handleEmploymentChange(index, 'companyAddress', e.target.value)}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
                               placeholder="e.g., San Francisco, CA, USA"
                               required
                             />
@@ -501,14 +489,14 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
 
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                              <Building size={16} className="text-blue-600" />
+                              <Building size={16} className="text-purple-600" />
                               Department / Division (optional)
                             </label>
                             <input
                               type="text"
                               value={employment.department}
                               onChange={(e) => handleEmploymentChange(index, 'department', e.target.value)}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
                               placeholder="e.g., Engineering Department"
                             />
                           </div>
@@ -518,7 +506,7 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
                       {/* Dates of Employment */}
                       <div className="mb-8">
                         <h5 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                          <Calendar size={18} className="text-blue-600" />
+                          <Calendar size={18} className="text-purple-600" />
                           Dates of Employment
                         </h5>
                         <div className="grid md:grid-cols-3 gap-6">
@@ -530,7 +518,7 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
                               type="month"
                               value={employment.startDate}
                               onChange={(e) => handleDateChange(index, 'startDate', e.target.value)}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
                               required
                             />
                           </div>
@@ -545,33 +533,33 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
                                 value={employment.endDate === 'Present' ? '' : employment.endDate}
                                 onChange={(e) => handleDateChange(index, 'endDate', e.target.value)}
                                 disabled={employment.endDate === 'Present'}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 disabled:bg-gray-100"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 disabled:bg-gray-100"
                                 required={employment.endDate !== 'Present'}
                               />
-                              <label className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-100 transition-colors">
+                              <label className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg border border-purple-200 cursor-pointer hover:bg-purple-100 transition-colors">
                                 <input
                                   type="checkbox"
                                   checked={employment.endDate === 'Present'}
                                   onChange={(e) => 
                                     handleDateChange(index, 'endDate', e.target.checked ? 'Present' : '')
                                   }
-                                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                                 />
-                                <span className="text-sm font-medium text-blue-700">Currently working here (Present)</span>
+                                <span className="text-sm font-medium text-purple-700">Currently working here (Present)</span>
                               </label>
                             </div>
                           </div>
 
                           <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                              <Clock size={16} className="text-blue-600" />
+                              <Clock size={16} className="text-purple-600" />
                               Total Duration
                             </label>
                             <input
                               type="text"
                               value={employment.duration}
                               onChange={(e) => handleEmploymentChange(index, 'duration', e.target.value)}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-gray-50"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 bg-gray-50"
                               placeholder="Auto-calculated"
                               readOnly
                             />
@@ -582,7 +570,7 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
                       {/* Additional Information */}
                       <div>
                         <h5 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                          <Briefcase size={18} className="text-blue-600" />
+                          <Briefcase size={18} className="text-purple-600" />
                           Additional Information (Optional)
                         </h5>
                         <div className="grid gap-6">
@@ -594,7 +582,7 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
                               value={employment.jobDescription}
                               onChange={(e) => handleEmploymentChange(index, 'jobDescription', e.target.value)}
                               rows={3}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
                               placeholder="Describe your main responsibilities and achievements..."
                             />
                           </div>
@@ -607,7 +595,7 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
                               type="text"
                               value={employment.reasonForLeaving}
                               onChange={(e) => handleEmploymentChange(index, 'reasonForLeaving', e.target.value)}
-                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+                              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
                               placeholder="e.g., Career growth, Company restructuring, etc."
                             />
                           </div>
@@ -625,7 +613,7 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
                       <button
                         type="button"
                         onClick={addEmploymentField}
-                        className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-all duration-200 mx-auto shadow-sm hover:shadow-md"
+                        className="flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-xl hover:bg-purple-700 transition-all duration-200 mx-auto shadow-sm hover:shadow-md"
                       >
                         <Plus size={18} />
                         Add First Employment
@@ -659,7 +647,7 @@ const EmploymentStep = ({ setEmployeeId, employeeId, onSuccess, onClose, onBack,
               <button
                 type="submit"
                 disabled={loading}
-                className="flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
