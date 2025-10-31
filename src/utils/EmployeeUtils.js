@@ -6,7 +6,7 @@ import axios from "axios";
  */
 
 // Base API URL
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 /**
  * Generic function to fetch data directly from an API endpoint (no cache)
